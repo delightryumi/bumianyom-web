@@ -3,7 +3,7 @@ schemaVersion: "v1"
 
 runConfig:
   # Untuk backend Landing Page, pastikan arahnya ke sini
-  basePath: "/apps/landing-page" 
+  basePath: "apps/landing-page" 
 
 scripts:
   # Menggunakan pnpm filter agar build tepat sasaran
