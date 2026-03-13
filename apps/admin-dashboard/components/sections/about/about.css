@@ -1,0 +1,31 @@
+.about-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.about-textarea {
+    min-height: 250px;
+    line-height: 1.6;
+}
+
+.about-preview-card {
+    background: var(--sage-light);
+    color: white;
+    padding: 32px;
+    border-radius: 20px;
+    margin-top: 24px;
+}
+
+.about-preview-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: white;
+}
+
+.about-preview-content {
+    font-size: 1rem;
+    opacity: 0.95;
+    white-space: pre-wrap;
+}

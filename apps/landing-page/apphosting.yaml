@@ -1,0 +1,10 @@
+kind: "AppHostingYaml"
+schemaVersion: "v1"
+
+scripts:
+  build: "pnpm --filter landing-page build"
+  run: "pnpm --filter landing-page start"
+
+environmentVariables:
+  - variable: "NODE_VERSION"
+    value: "20"

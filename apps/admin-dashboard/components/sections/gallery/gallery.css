@@ -1,0 +1,96 @@
+.gallery-item-premium {
+    position: relative;
+    aspect-ratio: 4/5;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--cream);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    cursor: default;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    transition: box-shadow 0.3s ease;
+}
+
+.gallery-item-premium:hover {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.gallery-img-premium {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-item-premium:hover .gallery-img-premium {
+    transform: scale(1.04);
+}
+
+.gallery-drag-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 20;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.3s ease;
+}
+
+.gallery-drag-handle:active {
+    cursor: grabbing;
+}
+
+.gallery-item-premium:hover .gallery-drag-handle {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.gallery-overlay-premium {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 30;
+    pointer-events: none;
+}
+
+.gallery-overlay-premium * {
+    pointer-events: auto;
+}
+
+.gallery-item-premium:hover .gallery-overlay-premium {
+    opacity: 1;
+}
+
+.btn-delete-premium {
+    background: white;
+    color: #e11d48;
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.btn-delete-premium:hover {
+    background: #e11d48;
+    color: white;
+    transform: translateY(-2px);
+}

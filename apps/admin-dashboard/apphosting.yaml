@@ -1,0 +1,10 @@
+kind: "AppHostingYaml"
+schemaVersion: "v1"
+
+scripts:
+  build: "pnpm --filter admin-dashboard build"
+  run: "pnpm --filter admin-dashboard start"
+
+environmentVariables:
+  - variable: "NODE_VERSION"
+    value: "20"

@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --sage: #788069;
+  --sage-light: #9DA68E;
+  --sage-dark: #5C6351;
+  --peach: #ffd8a6;
+  --peach-light: #ffe4c2;
+  --peach-dark: #e6b878;
+  --cream: #ffffff;
+  --surface-alt: #f8fafc;
+  --border-light: rgba(120, 128, 105, 0.15);
+  --rich-black: #1A1C14;
+
+  /* Legacy aliases for backwards compatibility */
+  --terracotta: var(--peach);
+  --terracotta-light: var(--peach-light);
+  --terracotta-dark: var(--peach-dark);
+  --broken-white: var(--cream);
+
+  --background: radial-gradient(circle at center, #ffffff 0%, #e2e8f0 100%);
+  --foreground: var(--rich-black);
+
+  --sidebar-width: 300px;
+}
+
+@theme inline {
+  --color-sage: var(--sage);
+  --color-sage-light: var(--sage-light);
+  --color-sage-dark: var(--sage-dark);
+  --color-peach: var(--peach);
+  --color-peach-light: var(--peach-light);
+  --color-peach-dark: var(--peach-dark);
+  --color-terracotta: var(--peach);
+  --color-terracotta-light: var(--peach-light);
+  --color-terracotta-dark: var(--peach-dark);
+  --color-cream: var(--cream);
+  --color-broken-white: var(--cream);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sage-light);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sage);
+}

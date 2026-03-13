@@ -1,0 +1,33 @@
+/* Sync with rooms.css boutique tokens */
+.attraction-card-premium {
+    background: white;
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.attraction-card-premium:hover {
+    transform: translateY(-4px);
+    border-color: var(--sage-light);
+    box-shadow: 0 15px 40px rgba(120, 128, 105, 0.08);
+}
+
+/* Specific Attraction Overrides if any */
+.attraction-reach-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(120, 128, 105, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--sage);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 10;
+}
