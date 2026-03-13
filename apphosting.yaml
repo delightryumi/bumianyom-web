@@ -1,12 +1,15 @@
 kind: "AppHostingYaml"
 schemaVersion: "v1"
 
-# Konfigurasi untuk build
+runConfig:
+  # Untuk backend Landing Page, pastikan arahnya ke sini
+  basePath: "/apps/landing-page" 
+
 scripts:
+  # Menggunakan pnpm filter agar build tepat sasaran
   build: "pnpm --filter landing-page build"
   run: "pnpm --filter landing-page start"
 
-# Lingkungan Node
 environmentVariables:
   - variable: "NODE_VERSION"
     value: "20"
