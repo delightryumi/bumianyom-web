@@ -16,5 +16,10 @@
     "firebase": "^11.10.0",
     "framer-motion": "^12.34.3",
     "gsap": "^3.14.2"
+  },
+  "pnpm": {
+    "overrides": {
+      "next": "^15.2.0"
+    }
   }
 }
