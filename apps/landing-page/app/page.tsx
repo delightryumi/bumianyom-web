@@ -145,8 +145,6 @@ export default function Home() {
         // ALL slides (including first) animate text in on scroll
         tl.to(text, {
           opacity: 1,
-          y: 0,
-          filter: 'blur(0px)',
           ...animProps.active,
           duration: textEnterDuration,
           ease: "power2.out"
