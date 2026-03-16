@@ -92,7 +92,7 @@ export default function AttractionsPage() {
                                             className="object-cover transition-transform duration-[2s] ease-out group-hover:scale-105"
                                             priority={i === 0}
                                             unoptimized={img.includes("firebasestorage.googleapis.com")}
-                                        />
+                                        />}
                                         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-700" />
                                         
                                         {/* Distance Tag */}
