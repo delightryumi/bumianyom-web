@@ -78,14 +78,14 @@ export default function AttractionsPage() {
                 <section className="max-w-7xl mx-auto px-6 pb-48">
                     <div className="space-y-48">
                         {attractions.map((attr, i) => {
-                            const img = attr.images?.find(img => img.isProfile)?.url || attr.imageUrl || (attr.images?.[0]?.url);
+                            const img = attr.images?.find(img => img.isProfile)?.url || attr.imageUrl || attr.images?.[0]?.url || "";
                             return (
                                 <article 
                                     key={attr.id} 
                                     className="editorial-card group"
                                 >
                                     <Link href={`/attractions/${attr.id}`} className="block relative aspect-[16/8] md:aspect-[21/9] rounded-[3rem] overflow-hidden shadow-2xl mb-16">
-                                        <Image 
+                                        {img && <Image 
                                             src={img} 
                                             alt={attr.name} 
                                             fill 
