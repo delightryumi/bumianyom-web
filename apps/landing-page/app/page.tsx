@@ -5,7 +5,7 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { WidgetSection } from "@/components/sections/widget/WidgetSection";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { HeroSlide } from '../../types/hero';
+import { HeroSlide } from '../types/hero';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
