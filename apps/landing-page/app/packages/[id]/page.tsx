@@ -13,11 +13,13 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import gsap from "gsap";
+import { useLandingSettings } from "@/services/useLandingSettings";
 
 export default function PackageDetailsPage() {
     const { id } = useParams();
     const { pkg, loading: pkgLoading } = usePackageById(id as string);
     const { data: footerData, loading: footerLoading } = useFooter();
+    const { bookingEngineUrl } = useLandingSettings();
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -171,12 +173,11 @@ export default function PackageDetailsPage() {
 
                                 <div className="space-y-4">
                                     <a 
-                                        href={finalWhatsAppUrl} 
+                                        href={bookingEngineUrl} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="w-full py-6 bg-[#111310] text-white rounded-2xl flex items-center justify-center gap-4 group hover:bg-[#788069] transition-all duration-500 shadow-xl"
                                     >
-                                        <MessageCircle size={18} fill="currentColor" />
                                         <span className="text-[11px] font-black uppercase tracking-[0.4em]">Pesan Sekarang</span>
                                         <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-500" />
                                     </a>

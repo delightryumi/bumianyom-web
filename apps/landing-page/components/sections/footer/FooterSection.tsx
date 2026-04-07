@@ -11,6 +11,7 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useFooter } from "@/services/useFooter";
+import { useLandingSettings } from "@/services/useLandingSettings";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -51,7 +52,10 @@ const getSocialIcon = (platform: string) => {
 };
 
 export const FooterSection = () => {
-    const { data, loading } = useFooter();
+    const { data: footerData, loading: footerLoading } = useFooter();
+    const { bookingEngineUrl } = useLandingSettings();
+    const data = footerData;
+    const loading = footerLoading;
     const footerRef = useRef<HTMLElement>(null);
     const mapRef = useRef<HTMLDivElement>(null);
 
@@ -190,10 +194,10 @@ export const FooterSection = () => {
                         </div>
                         
                         <div className="col-span-1 md:col-span-2 lg:col-span-1 grid grid-cols-2 gap-8 cinematic-item border-t border-[#111310]/10 pt-8 mt-2">
-                            <Link href="/rooms" className="group flex items-center gap-3 text-xs font-bold tracking-widest uppercase hover:text-[#788069] transition-all">
+                            <a href={bookingEngineUrl} target="_blank" rel="noreferrer" className="group flex items-center gap-3 text-xs font-bold tracking-widest uppercase hover:text-[#788069] transition-all">
                                 <span>Pesan Kamar</span>
                                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                            </Link>
+                            </a>
                             <Link href="/gallery" className="group flex items-center gap-3 text-xs font-bold tracking-widest uppercase hover:text-[#788069] transition-all">
                                 <span>Jelajahi Sudut</span>
                                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

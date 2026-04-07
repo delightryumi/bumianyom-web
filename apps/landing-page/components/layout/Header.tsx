@@ -9,6 +9,7 @@ import { Magnetic } from '@/components/ui/Magnetic';
 import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Topbar } from '@/components/layout/Topbar';
+import { useLandingSettings } from '@/services/useLandingSettings';
 
 // ─── Data types ──────────────────────────────────────────────────────────────
 interface RoomType {
@@ -188,12 +189,14 @@ const AnimatedLink = ({
 };
 
 // ─── Book button (GSAP bg sweep) ─────────────────────────────────────────────
-const BookButton = ({ isScrolled }: { isScrolled: boolean }) => {
+const BookButton = ({ isScrolled, bookingUrl }: { isScrolled: boolean; bookingUrl: string }) => {
   const bgRef = useRef<HTMLDivElement>(null);
   return (
     <Magnetic>
-      <Link
-        href="/rooms"
+      <a
+        href={bookingUrl}
+        target="_blank"
+        rel="noreferrer"
         onMouseEnter={() => gsap.to(bgRef.current, { y: '0%', duration: 0.45, ease: 'power3.out' })}
         onMouseLeave={() => gsap.to(bgRef.current, { y: '101%', duration: 0.4, ease: 'power3.in' })}
         className={`relative overflow-hidden flex items-center justify-center px-8 py-3 rounded-md transition-colors duration-300 border ${isScrolled
@@ -202,7 +205,7 @@ const BookButton = ({ isScrolled }: { isScrolled: boolean }) => {
       >
         <div ref={bgRef} className="absolute inset-0 bg-[#fef7e5] rounded-md" style={{ transform: 'translateY(101%)' }} />
         <span className="relative z-10 text-[10px] font-black uppercase tracking-[0.25em]">Reserve Now</span>
-      </Link>
+      </a>
     </Magnetic>
   );
 };
@@ -211,11 +214,10 @@ type ActiveDropdown = 'room' | 'package' | 'attraction' | null;
 
 // ─── Main Header ─────────────────────────────────────────────────────────────
 export const Header = ({ forceScrolledState = false }: { forceScrolledState?: boolean }) => {
+  const { lightLogo, darkLogo, bookingEngineUrl } = useLandingSettings();
   const [internalIsScrolled, setInternalIsScrolled] = useState(false);
   const isScrolled = internalIsScrolled || forceScrolledState;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lightLogo, setLightLogo] = useState<string | null>(null);
-  const [darkLogo, setDarkLogo] = useState<string | null>(null);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
@@ -236,12 +238,6 @@ export const Header = ({ forceScrolledState = false }: { forceScrolledState?: bo
     return () => window.removeEventListener('resize', update);
   }, [isScrolled, mobileMenuOpen]);
 
-  // Logos
-  useEffect(() => {
-    getDoc(doc(db, "settings", "landingPage")).then(snap => {
-      if (snap.exists()) { setLightLogo(snap.data().lightLogo || null); setDarkLogo(snap.data().darkLogo || null); }
-    }).catch(console.error);
-  }, []);
 
   // Room types
   useEffect(() => {
@@ -356,7 +352,7 @@ export const Header = ({ forceScrolledState = false }: { forceScrolledState?: bo
             </div>
             {/* Static links */}
             <AnimatedLink title="Gallery" href="/gallery" isScrolled={isScrolled} />
-            <BookButton isScrolled={isScrolled} />
+            <BookButton isScrolled={isScrolled} bookingUrl={bookingEngineUrl} />
           </nav>
 
           <Magnetic>
@@ -418,11 +414,11 @@ export const Header = ({ forceScrolledState = false }: { forceScrolledState?: bo
             </nav>
 
             <div className="mobile-menu-item mt-10">
-              <Link href="/rooms" onClick={() => setMobileMenuOpen(false)}
+              <a href={bookingEngineUrl} target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center w-full py-5 bg-[#fef7e5] text-[#1a1a1a] text-xs font-black uppercase tracking-[0.25em] rounded-md active:scale-95 transition-transform"
               >
                 Reserve Your Stay
-              </Link>
+              </a>
               <div className="mt-10 flex justify-center gap-8 text-[#788069]">
                 <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors">Instagram</a>
                 <a href="#" className="text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors">Whatsapp</a>

@@ -10,6 +10,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Magnetic } from "@/components/ui/Magnetic";
 import { LuxuryCalendar } from "@/components/ui/LuxuryCalendar/LuxuryCalendar";
+import { useLandingSettings } from "@/services/useLandingSettings";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -165,6 +166,7 @@ const AnimationStyles = () => (
 
 
 export const AboutBookingSection = () => {
+    const { bookingEngineUrl: bookingUrl } = useLandingSettings();
     const sectionRef = useRef<HTMLElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const tagRef = useRef<HTMLParagraphElement>(null);
@@ -174,7 +176,6 @@ export const AboutBookingSection = () => {
     const widgetRef = useRef<HTMLDivElement>(null);
     const innerContentRef = useRef<HTMLDivElement>(null);
 
-    const [bookingUrl, setBookingUrl] = useState<string>("#");
     const [guests, setGuests] = useState(2);
     const [checkIn, setCheckIn] = useState<Date | null>(null);
     const [checkOut, setCheckOut] = useState<Date | null>(null);
@@ -186,67 +187,84 @@ export const AboutBookingSection = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Fetch booking URL
-    useEffect(() => {
-        const fetchUrl = async () => {
-            try {
-                const snap = await getDoc(doc(db, "settings", "landingPage"));
-                if (snap.exists() && snap.data().bookingEngineUrl) {
-                    setBookingUrl(snap.data().bookingEngineUrl);
-                }
-            } catch (err) {
-                console.error("Failed to fetch booking URL:", err);
-            }
-        };
-        fetchUrl();
-    }, []);
 
     // GSAP animations using useGSAP for automatic cleanup and DOM stability
     useGSAP(() => {
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: sectionRef.current,
-                start: "top top",
-                end: "+=400%", // 2x Slower/Longer duration (Requested)
-                pin: contentRef.current,
-                scrub: 1, // Smooth scrub
-                pinSpacing: true
+        const mm = gsap.matchMedia();
+
+        mm.add("(min-width: 1024px)", () => {
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: sectionRef.current,
+                    start: "top top",
+                    end: "+=400%",
+                    pin: contentRef.current,
+                    scrub: 1,
+                    pinSpacing: true
+                }
+            });
+
+            // Marquee
+            const tracks = gsap.utils.toArray(".marquee-track", sectionRef.current) as HTMLElement[];
+            tracks.forEach((el, i) => {
+                const dir = parseInt(el.getAttribute("data-dir") || "-1");
+                tl.fromTo(el,
+                    { xPercent: dir === 1 ? -50 : 0 },
+                    { xPercent: dir === 1 ? 0 : -50, ease: "none" },
+                    0
+                );
+            });
+
+            // Sand Blobs
+            tl.to(".sand-blobs", { y: 150, rotation: 3, ease: "none" }, 0);
+
+            // Cinematic Exit with Blur (Desktop Only)
+            if (innerContentRef.current) {
+                tl.to(innerContentRef.current, {
+                    opacity: 0,
+                    scale: 0.95,
+                    y: -50,
+                    filter: "blur(8px)",
+                    duration: 0.15,
+                    ease: "power2.in"
+                }, 0.85);
             }
         });
 
-        // ─── Marquee Linked to Main Scroll Timeline ───
-        const tracks = gsap.utils.toArray(".marquee-track", sectionRef.current) as HTMLElement[];
-        tracks.forEach((el, i) => {
-            const dir = parseInt(el.getAttribute("data-dir") || "-1");
-            tl.fromTo(el,
-                { xPercent: dir === 1 ? -50 : 0 },
-                {
-                    xPercent: dir === 1 ? 0 : -50,
-                    ease: "none",
-                },
-                0
-            );
+        mm.add("(max-width: 1023px)", () => {
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: sectionRef.current,
+                    start: "top top",
+                    end: "+=300%", // Slightly shorter on mobile for better feel
+                    pin: contentRef.current,
+                    scrub: 1,
+                    pinSpacing: true
+                }
+            });
+
+            // Marquee (kept for mobile as it's lighter)
+            const tracks = gsap.utils.toArray(".marquee-track", sectionRef.current) as HTMLElement[];
+            tracks.forEach((el, i) => {
+                const dir = parseInt(el.getAttribute("data-dir") || "-1");
+                tl.fromTo(el,
+                    { xPercent: dir === 1 ? -50 : 0 },
+                    { xPercent: dir === 1 ? 0 : -50, ease: "none" },
+                    0
+                );
+            });
+
+            // Mobile Exit: Opacity & Move Only (NO BLUR)
+            if (innerContentRef.current) {
+                tl.to(innerContentRef.current, {
+                    opacity: 0,
+                    scale: 0.98,
+                    y: -20, // Less aggressive movement
+                    duration: 0.15,
+                    ease: "power2.in"
+                }, 0.85);
+            }
         });
-
-        // ─── Sand Blobs Parallax (Subtle movement) ───
-        tl.to(".sand-blobs", {
-            y: 150, // Moves gently down as user scrolls
-            rotation: 3, // Slight rotation for organic feel
-            ease: "none"
-        }, 0);
-
-        // ─── Cinematic Exit Transition (Requested) ───
-        // Creates a seamless flow to the next section by fading out content
-        if (innerContentRef.current) {
-            tl.to(innerContentRef.current, {
-                opacity: 0,
-                scale: 0.95,
-                y: -50,
-                filter: "blur(8px)",
-                duration: 0.15, // Occurs during the last 15% of the scroll
-                ease: "power2.in"
-            }, 0.85);
-        }
     }, { scope: sectionRef });
 
     return (
@@ -262,12 +280,16 @@ export const AboutBookingSection = () => {
         >
             <AnimationStyles />
             {/* ── Content & Background (Unified Pinned Container) ── */}
-            <div ref={contentRef} className="relative z-10 w-full h-screen flex items-center px-6 md:px-12 xl:px-24 2xl:px-40 py-12 overflow-hidden">
+            <div ref={contentRef} className="relative z-10 w-full h-screen flex items-center px-6 md:px-12 xl:px-24 2xl:px-40 py-12 overflow-hidden" style={{ transition: 'filter 0.3s ease-out' }}>
                 <SandBlobs />
                 <ArcCircles />
                 <MarqueeLines />
                 
-                <div ref={innerContentRef} className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-28 xl:gap-36 items-center max-w-[1800px] mx-auto">
+                <div 
+                    ref={innerContentRef} 
+                    className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-28 xl:gap-36 items-center max-w-[1800px] mx-auto transform-gpu"
+                    style={{ willChange: 'transform, opacity' }}
+                >
                     {/* Left Column — Copy */}
                     <div className="max-w-2xl">
                         <p

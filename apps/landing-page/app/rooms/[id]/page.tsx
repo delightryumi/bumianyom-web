@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useLandingSettings } from "@/services/useLandingSettings";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -41,6 +42,7 @@ interface RoomType {
 
 export default function RoomDetailsPage() {
     const { id } = useParams();
+    const { bookingEngineUrl } = useLandingSettings();
     const [room, setRoom] = useState<RoomType | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -191,7 +193,7 @@ export default function RoomDetailsPage() {
                                 </div>
 
                                 <a 
-                                    href={room.bookingUrl} 
+                                    href={bookingEngineUrl} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="w-full py-6 bg-[#1a1a1a] text-white rounded-2xl flex items-center justify-center gap-4 group hover:bg-[#788069] transition-all duration-500"
