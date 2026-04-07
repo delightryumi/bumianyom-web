@@ -1,175 +1,231 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun, Wind } from "lucide-react";
+import React, { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Cloud, CloudDrizzle, CloudFog, CloudLightning, 
+  CloudMoon, CloudRain, CloudSnow, CloudSun, 
+  Moon, Sun, Wind, MapPin, Clock, RefreshCw, AlertCircle
+} from "lucide-react";
 
 // Coordinates for Temanggung, Central Java
 const LAT = -7.3167;
 const LON = 110.1667;
 
+type WeatherData = {
+  temp: number;
+  code: number;
+  isDay: boolean;
+};
+
 export const WidgetSection = ({ insideHero = false }: { insideHero?: boolean }) => {
   const [time, setTime] = useState<Date | null>(null);
-  const [weather, setWeather] = useState<{ temp: number; code: number; isDay: boolean } | null>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchWeather = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&timezone=Asia%2FJakarta&forecast_days=1`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error("API_ERROR");
+      
+      const data = await res.json();
+      const current = data.current;
+      
+      if (!current) throw new Error("DATA_MISSING");
+
+      setWeather({
+        temp: Math.round(current.temperature_2m ?? 0),
+        code: current.weather_code ?? 0,
+        isDay: current.is_day === 1,
+      });
+      setStatus("success");
+    } catch (err) {
+      console.error("Weather fetch failed:", err);
+      if (!weather) setStatus("error");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [weather]);
 
   useEffect(() => {
-    // Clock Tick
     setTime(new Date());
-    const interval = setInterval(() => setTime(new Date()), 1000);
-
-    // Weather Fetch (Open-Meteo is free and requires no API key)
-    const fetchWeather = async () => {
-      try {
-        // We use both 'current' and 'current_weather' params to be safe across different API versions/proxies
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&current_weather=true&timezone=Asia%2FJakarta`;
-        const res = await fetch(url);
-        
-        if (!res.ok) throw new Error("Weather API Response not OK");
-        
-        const data = await res.json();
-        
-        // Robust data mapping to handle multiple Open-Meteo response formats
-        const currentData = data.current || data.current_weather;
-        
-        if (!currentData) throw new Error("No current weather data found in response");
-
-        setWeather({
-          temp: Math.round(currentData.temperature_2m ?? currentData.temperature ?? 0),
-          code: currentData.weather_code ?? currentData.weathercode ?? 0,
-          isDay: (currentData.is_day ?? currentData.is_day) == 1,
-        });
-      } catch (err) {
-        console.error("Failed to fetch weather:", err);
-        // We don't set error state to avoid showing it to users, 
-        // the "Reading" spinner remains until it finally succeeds or retries.
-      }
-    };
-
+    const clockInterval = setInterval(() => setTime(new Date()), 1000);
     fetchWeather();
-    // Refresh weather every 15 minutes
-    const weatherInterval = setInterval(fetchWeather, 900000);
-
+    const weatherInterval = setInterval(fetchWeather, 1800000);
     return () => {
-      clearInterval(interval);
+      clearInterval(clockInterval);
       clearInterval(weatherInterval);
     };
-  }, []);
+  }, [fetchWeather]);
 
-  // WMO Weather interpretation codes
-  const getWeatherIcon = (code: number, isDay: boolean) => {
-    // 0: Clear sky
-    if (code === 0) return isDay ? <Sun size={24} className="text-[#eab308]" /> : <Moon size={24} className="text-slate-200" />;
-    // 1, 2, 3: Mainly clear, partly cloudy, and overcast
-    if (code <= 3) return isDay ? <CloudSun size={24} className="text-slate-400" /> : <CloudMoon size={24} className="text-slate-400" />;
-    // 45, 48: Fog and depositing rime fog
-    if (code === 45 || code === 48) return <CloudFog size={24} className="text-slate-400" />;
-    // 51-55: Drizzle
-    if (code >= 51 && code <= 55) return <CloudDrizzle size={24} className="text-blue-300" />;
-    // 61-65: Rain
-    if (code >= 61 && code <= 65) return <CloudRain size={24} className="text-blue-400" />;
-    // 71-77: Snow
-    if (code >= 71 && code <= 77) return <CloudSnow size={24} className="text-sky-200" />;
-    // 95-99: Thunderstorm
-    if (code >= 95) return <CloudLightning size={24} className="text-purple-400" />;
+  const getWeatherDetails = (code: number, isDay: boolean) => {
+    const defaultIcon = <Cloud size={20} className="text-[#A6AE96]" />;
+    
+    const config: Record<number, { text: string; icon: React.ReactNode; color: string }> = {
+      0: { text: "Clear Sky", icon: isDay ? <Sun size={20} /> : <Moon size={20} />, color: isDay ? "text-yellow-400" : "text-indigo-200" },
+      1: { text: "Mainly Clear", icon: isDay ? <CloudSun size={20} /> : <CloudMoon size={20} />, color: "text-blue-300" },
+      2: { text: "Partly Cloudy", icon: isDay ? <CloudSun size={20} /> : <CloudMoon size={20} />, color: "text-blue-300" },
+      3: { text: "Overcast", icon: <Cloud size={20} />, color: "text-slate-400" },
+      45: { text: "Foggy", icon: <CloudFog size={20} />, color: "text-slate-300" },
+      48: { text: "Foggy", icon: <CloudFog size={20} />, color: "text-slate-300" },
+      51: { text: "Light Drizzle", icon: <CloudDrizzle size={20} />, color: "text-blue-300" },
+      53: { text: "Drizzle", icon: <CloudDrizzle size={20} />, color: "text-blue-300" },
+      55: { text: "Drizzle", icon: <CloudDrizzle size={20} />, color: "text-blue-300" },
+      61: { text: "Light Rain", icon: <CloudRain size={20} />, color: "text-blue-400" },
+      63: { text: "Rainy", icon: <CloudRain size={20} />, color: "text-blue-400" },
+      65: { text: "Heavy Rain", icon: <CloudRain size={20} />, color: "text-blue-400" },
+      95: { text: "Thunderstorm", icon: <CloudLightning size={20} />, color: "text-purple-400" },
+    };
 
-    return <Cloud size={24} className="text-slate-400" />;
+    return config[code] || { text: "Cloudy", icon: defaultIcon, color: "text-slate-400" };
   };
 
-  const getWeatherText = (code: number) => {
-    if (code === 0) return "Clear Sky";
-    if (code <= 3) return "Partly Cloudy";
-    if (code === 45 || code === 48) return "Foggy";
-    if (code >= 51 && code <= 55) return "Drizzling";
-    if (code >= 61 && code <= 65) return "Raining";
-    if (code >= 71 && code <= 77) return "Snowing";
-    if (code >= 95) return "Thunderstorm";
-    return "Cloudy";
-  };
+  if (!time) return null;
 
-  if (!time) return null; // Prevent hydration mismatch before mount
+  const formattedTime = time.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    hour12: false,
+    timeZone: 'Asia/Jakarta' 
+  });
+  
+  const formattedDate = time.toLocaleDateString('en-US', { 
+    weekday: 'short', 
+    month: 'short', 
+    day: 'numeric',
+    timeZone: 'Asia/Jakarta' 
+  });
 
-  const formattedTime = time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':');
-  const formattedDate = time.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' });
+  const weatherInfo = weather ? getWeatherDetails(weather.code, weather.isDay) : null;
 
   const InnerContent = (
-    <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] rounded-[2rem] p-6 pr-10 md:p-8 md:pr-12 flex flex-col md:flex-row items-center gap-8 md:gap-16">
-
-      {/* Location & Time Block */}
-      <div className="flex items-center gap-6">
-        <div className="w-12 h-12 rounded-md bg-[#fef7e5] flex items-center justify-center">
-          <div className="w-2 h-2 rounded-sm bg-[#788069] animate-pulse" />
-        </div>
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#788069] mb-1">
-            Local Time
-          </p>
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-light text-[#1a1a1a] tracking-tight">{formattedTime}</span>
-            <span className="text-sm font-medium text-[#1a1a1a]/40 uppercase tracking-widest">WIB</span>
+    <div className="relative group">
+      <div className="absolute inset-0 bg-white/40 backdrop-blur-[20px] rounded-[1.5rem] md:rounded-full border border-white/60 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:bg-white/50 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)]" />
+      
+      <div className="relative px-6 py-4 md:px-10 md:py-5 flex flex-col md:flex-row items-center gap-6 md:gap-10 lg:gap-14">
+        
+        {/* Time */}
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#788069]/10 flex items-center justify-center text-[#788069]">
+            <Clock size={16} />
+          </div>
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-[#788069]/60 mb-0.5">Local Time</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-medium text-[#1a1a1a] tracking-tight tabular-nums">{formattedTime}</span>
+              <span className="text-[9px] font-bold text-[#1a1a1a]/30 uppercase tracking-widest">WIB</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="hidden md:block w-px h-12 bg-[#1a1a1a]/10" />
+        <div className="hidden md:block w-px h-8 bg-black/5" />
 
-      {/* Date Block */}
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#788069] mb-1">
-          Temanggung, ID
-        </p>
-        <p className="text-lg font-medium text-[#1a1a1a] tracking-tight">
-          {formattedDate}
-        </p>
-      </div>
-
-      <div className="hidden md:block w-px h-12 bg-[#1a1a1a]/10" />
-
-      {/* Weather Block */}
-      <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#788069] mb-1 flex items-center gap-2">
-          <Wind size={12} />
-          Conditions
-        </p>
-        <div className="flex items-center gap-3">
-          {weather ? (
-            <>
-              {getWeatherIcon(weather.code, weather.isDay)}
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-light text-[#1a1a1a] tracking-tight">{weather.temp}°</span>
-                <span className="text-xs font-medium text-[#1a1a1a]/40 tracking-widest uppercase">C</span>
-              </div>
-              <span className="text-sm font-medium text-[#1a1a1a]/60 ml-2 hidden lg:inline-block">
-                {getWeatherText(weather.code)}
-              </span>
-            </>
-          ) : (
-            <div className="flex items-center gap-2 h-8">
-              <div className="w-4 h-4 border-2 border-[#1a1a1a]/20 border-t-[#788069] rounded-full animate-spin" />
-              <span className="text-xs text-[#1a1a1a]/40 tracking-widest uppercase">Reading</span>
+        {/* Location */}
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#ffd8a6]/20 flex items-center justify-center text-[#d9a86a]">
+            <MapPin size={16} />
+          </div>
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-[0.3em] text-[#788069]/60 mb-0.5">Discovery At</p>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-bold text-[#1a1a1a] tracking-tight">Temanggung</span>
+              <span className="text-[9px] font-medium text-[#1a1a1a]/30 uppercase tracking-widest">{formattedDate}</span>
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
+        <div className="hidden md:block w-px h-8 bg-black/5" />
+
+        {/* Weather */}
+        <div className="flex items-center gap-4 min-w-[120px]">
+          <AnimatePresence mode="wait">
+            {status === "loading" ? (
+              <motion.div 
+                key="loading" 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-3"
+              >
+                <RefreshCw size={14} className="text-[#788069] animate-spin" />
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#788069]/40">Syncing</span>
+              </motion.div>
+            ) : status === "error" ? (
+              <motion.div 
+                key="error" 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 text-rose-400"
+              >
+                <AlertCircle size={14} />
+                <span className="text-[9px] font-bold uppercase tracking-widest">Offline</span>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="success" 
+                initial={{ opacity: 0, x: -10 }} 
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-4"
+              >
+                <div className={`p-2 rounded-lg bg-black/5 ${weatherInfo?.color}`}>
+                  {weatherInfo?.icon}
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-xl font-medium text-[#1a1a1a] tabular-nums">{weather?.temp}°</span>
+                    <span className="text-[9px] font-bold text-[#1a1a1a]/30 uppercase">C</span>
+                  </div>
+                  <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#1a1a1a]/40">
+                    {weatherInfo?.text}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <button 
+          onClick={() => fetchWeather()}
+          disabled={isRefreshing}
+          className="ml-auto hidden lg:flex w-7 h-7 rounded-full items-center justify-center text-black/10 hover:text-[#788069] hover:bg-[#788069]/5 transition-all duration-300"
+        >
+          <RefreshCw size={12} className={isRefreshing ? "animate-spin" : ""} />
+        </button>
+      </div>
     </div>
   );
 
   if (insideHero) {
     return (
-      <div className="w-full flex justify-center pointer-events-auto">
-        {InnerContent}
+      <div className="w-full flex justify-center pointer-events-auto px-6">
+        <motion.div
+           initial={{ opacity: 0, y: 30 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 1.2, ease: [0.23, 1, 0.32, 1], delay: 0.8 }}
+        >
+          {InnerContent}
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <section className="relative w-full -mt-20 z-30 pointer-events-none px-6 md:px-12">
+    <section className="relative w-full -mt-16 lg:-mt-20 z-30 pointer-events-none px-6">
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="container mx-auto flex justify-center pointer-events-auto"
+        viewport={{ once: true }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-screen-xl mx-auto flex justify-center pointer-events-auto"
       >
         {InnerContent}
       </motion.div>

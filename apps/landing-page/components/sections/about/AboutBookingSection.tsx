@@ -232,45 +232,15 @@ export const AboutBookingSection = () => {
         });
 
         mm.add("(max-width: 1023px)", () => {
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: sectionRef.current,
-                    start: "top top",
-                    end: "+=300%", // Slightly shorter on mobile for better feel
-                    pin: contentRef.current,
-                    scrub: 1,
-                    pinSpacing: true
-                }
-            });
-
-            // Marquee (kept for mobile as it's lighter)
-            const tracks = gsap.utils.toArray(".marquee-track", sectionRef.current) as HTMLElement[];
-            tracks.forEach((el, i) => {
-                const dir = parseInt(el.getAttribute("data-dir") || "-1");
-                tl.fromTo(el,
-                    { xPercent: dir === 1 ? -50 : 0 },
-                    { xPercent: dir === 1 ? 0 : -50, ease: "none" },
-                    0
-                );
-            });
-
-            // Mobile Exit: Opacity & Move Only (NO BLUR)
-            if (innerContentRef.current) {
-                tl.to(innerContentRef.current, {
-                    opacity: 0,
-                    scale: 0.98,
-                    y: -20, // Less aggressive movement
-                    duration: 0.15,
-                    ease: "power2.in"
-                }, 0.85);
-            }
+            // No transitions on mobile as requested to prevent visibility issues
+            // Content will be static and scrollable normally
         });
     }, { scope: sectionRef });
 
     return (
         <section
             ref={sectionRef}
-            className="relative w-full h-screen bg-[#fef7e5]" // Changed min-h-screen to h-screen for "pas 1 layar"
+            className="relative w-full min-h-screen lg:h-screen bg-[#fef7e5]" 
             style={{
                 borderRadius: "3.5rem 3.5rem 0 0",
                 boxShadow: "0 -30px 80px rgba(0,0,0,0.08), 0 -2px 0px rgba(255,216,166,0.3)",
@@ -280,7 +250,7 @@ export const AboutBookingSection = () => {
         >
             <AnimationStyles />
             {/* ── Content & Background (Unified Pinned Container) ── */}
-            <div ref={contentRef} className="relative z-10 w-full h-screen flex items-center px-6 md:px-12 xl:px-24 2xl:px-40 py-12 overflow-hidden" style={{ transition: 'filter 0.3s ease-out' }}>
+            <div ref={contentRef} className="relative z-10 w-full min-h-screen lg:h-screen flex items-center px-6 md:px-12 xl:px-24 2xl:px-40 py-20 lg:py-12 overflow-hidden" style={{ transition: 'filter 0.3s ease-out' }}>
                 <SandBlobs />
                 <ArcCircles />
                 <MarqueeLines />
