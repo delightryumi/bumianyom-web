@@ -43,7 +43,7 @@ export const Topbar = () => {
     const { data, loading } = useFooter();
 
     if (loading || !data) return (
-        <div className="w-full bg-[#d0c6b1] h-[40px] animate-pulse relative z-[60]" />
+        <div className="w-full bg-[#788069] h-[40px] animate-pulse relative z-[60]" />
     );
 
     const containerVariants = {
@@ -64,12 +64,12 @@ export const Topbar = () => {
             initial="hidden"
             animate="visible"
             variants={containerVariants}
-            className="w-full bg-[#d0c6b1] text-[#4a473f] text-[10px] uppercase font-bold tracking-[0.2em] py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-[60] relative overflow-hidden"
+            className="w-full bg-[#788069] text-[#fef7e5] text-[10px] uppercase font-bold tracking-[0.2em] py-3 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between z-[60] relative overflow-hidden"
         >
             {/* Left / Location */}
             <div className="flex items-center gap-2 mb-2 md:mb-0">
                 {data.address && (
-                    <motion.div variants={itemVariants} className="flex items-center gap-3 hover:text-[#1a1a1a] transition-colors cursor-default">
+                    <motion.div variants={itemVariants} className="flex items-center gap-3 hover:text-[#ffd8a6] transition-colors cursor-default">
                         <MapPin size={12} className="opacity-50" />
                         <span className="truncate max-w-[250px] md:max-w-md">{data.address}</span>
                     </motion.div>
@@ -79,28 +79,28 @@ export const Topbar = () => {
             {/* Right / Contacts & Socials */}
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
                 {data.email && (
-                    <motion.a variants={itemVariants} href={`mailto:${data.email}`} className="flex items-center gap-3 hover:text-[#1a1a1a] transition-colors lowercase font-normal italic">
+                    <motion.a variants={itemVariants} href={`mailto:${data.email}`} className="flex items-center gap-3 hover:text-[#ffd8a6] transition-colors lowercase font-normal italic">
                         <Mail size={12} className="opacity-50" />
                         <span>{data.email}</span>
                     </motion.a>
                 )}
                 
                 {data.phones.map((phone, idx) => (
-                    <motion.a variants={itemVariants} key={idx} href={`tel:${phone.replace(/\s+/g, '')}`} className="flex items-center gap-3 hover:text-[#1a1a1a] transition-colors">
+                    <motion.a variants={itemVariants} key={idx} href={`tel:${phone.replace(/\s+/g, '')}`} className="flex items-center gap-3 hover:text-[#ffd8a6] transition-colors">
                         <Phone size={12} className="opacity-50" />
                         <span>{phone}</span>
                     </motion.a>
                 ))}
 
                 {data.socialLinks.length > 0 && (
-                    <motion.div variants={itemVariants} className="flex items-center gap-5 border-l border-[#4a473f]/20 pl-6 md:pl-10">
+                    <motion.div variants={itemVariants} className="flex items-center gap-5 border-l border-[#fef7e5]/30 pl-6 md:pl-10">
                         {data.socialLinks.map((social, idx) => (
                             <a 
                                 key={idx} 
                                 href={social.url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="hover:text-[#1a1a1a] hover:scale-110 transition-all flex items-center justify-center"
+                                className="hover:text-[#ffd8a6] hover:scale-110 transition-all flex items-center justify-center"
                                 aria-label={social.platform}
                             >
                                 {getSocialIcon(social.platform)}

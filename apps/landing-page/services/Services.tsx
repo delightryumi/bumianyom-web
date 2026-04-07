@@ -7,26 +7,27 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Users,
   Star,
   MapPin,
-  CheckCircle2
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { usePackages, Package } from "./usePackages";
+import { useServices, PackageItem } from "./useServices";
 
+// Register GSAP (Tanpa ScrollTrigger)
 if (typeof window !== "undefined") {
-  gsap.registerPlugin(useGSAP, ScrollTrigger);
+  gsap.registerPlugin(useGSAP);
 }
 
 const AUTO_PLAY_DURATION = 6;
 
-export function PackagesSection() {
-  const { packages, loading } = usePackages();
+export default function Services() {
+  const { packages, loading } = useServices();
 
   /* ---------------- STATE ---------------- */
-  const [items, setItems] = useState<Package[]>([]);
+  const [items, setItems] = useState<PackageItem[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -51,15 +52,10 @@ export function PackagesSection() {
     if (packages?.length) setItems(packages);
   }, [packages]);
 
-  useEffect(() => {
-    if (!loading) {
-      setTimeout(() => ScrollTrigger.refresh(), 100);
-    }
-  }, [loading, items.length]);
-
   /* ---------------- ANIMATIONS ---------------- */
   const { contextSafe } = useGSAP({ scope: containerRef });
 
+  // 1. Text Animation (Luxury Stagger Reveal)
   const animateTextIn = contextSafe(() => {
     if (!textRef.current) return;
     gsap.fromTo(
@@ -76,28 +72,32 @@ export function PackagesSection() {
     );
   });
 
+  // 2. Background Cinematic Reveal (Zoom Out + Blur Fade)
+  // Ini efek "Reveal" yang Anda minta
   const animateBgReveal = contextSafe(() => {
     if (!bgImageRef.current) return;
     
+    // Reset state awal
     gsap.killTweensOf(bgImageRef.current);
     
     gsap.fromTo(
       bgImageRef.current,
       { 
-        scale: 1.15,
+        scale: 1.15,      // Mulai agak besar (Zoom In)
         opacity: 0, 
-        filter: "blur(10px)"
+        filter: "blur(10px)" // Mulai blur
       },
       {
-        scale: 1,
+        scale: 1,         // Kembali ke ukuran normal
         opacity: 1,
-        filter: "blur(0px)",
-        duration: 1.5,
+        filter: "blur(0px)", // Jadi jelas
+        duration: 1.5,    // Durasi lambat cinematic
         ease: "power2.out",
       }
     );
   });
 
+  // 3. Carousel Cards Shuffle
   const updateCarousel = contextSafe(() => {
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
@@ -113,6 +113,7 @@ export function PackagesSection() {
     });
   });
 
+  // 4. Progress Bar Reset
   const resetProgressBar = contextSafe(() => {
     if (!progressRef.current) return;
     if (progressTween.current) progressTween.current.kill();
@@ -132,6 +133,7 @@ export function PackagesSection() {
     if (isAnimating || items.length < 2) return;
     setIsAnimating(true);
 
+    // Text Out Animation
     gsap.to(textRef.current?.children || [], {
       y: -20,
       opacity: 0,
@@ -182,26 +184,15 @@ export function PackagesSection() {
   /* ---------------- HELPER ---------------- */
   const renderTwoToneTitle = (text: string) => {
     const words = text.split(" ");
-    if (words.length < 2) return <span className="text-[#fef7e5]">{text}</span>;
+    if (words.length < 2) return <span className="text-white">{text}</span>;
     const firstWord = words[0];
     const restWords = words.slice(1).join(" ");
     return (
       <>
-        <span className="text-[#fef7e5] font-medium">{firstWord}</span>{" "}
-        <span className="text-[#ffd8a6] font-light italic">{restWords}</span>
+        <span className="text-white font-medium">{firstWord}</span>{" "}
+        <span className="text-[var(--secondary)] font-light italic">{restWords}</span>
       </>
     );
-  };
-
-  const formatIDR = (priceString: string) => {
-    // If it's already formatted or non-numeric, just return
-    const num = parseInt(priceString.replace(/\D/g, ''), 10);
-    if (isNaN(num)) return priceString;
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(num);
   };
 
   /* ---------------- RENDER ---------------- */
@@ -209,16 +200,22 @@ export function PackagesSection() {
   if (!items.length) return null;
   
   const active = items[0];
-  const fallbackImg = "https://images.unsplash.com/photo-1542314831-c6a4d14d8c1c?auto=format&fit=crop&q=80";
+
+  const formatIDR = (p: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(p);
 
   return (
-    <section ref={containerRef} className="relative w-full min-h-[100vh] overflow-hidden bg-[#111310] text-white rounded-t-[1.5rem]">
+    <section ref={containerRef} className="relative w-full min-h-[100vh] overflow-hidden bg-[var(--bg-main)] text-[var(--text-main)]">
       
       {/* === 1. BACKGROUND LAYER (CINEMATIC REVEAL) === */}
       <div className="absolute inset-0 z-0">
          <div ref={bgImageRef} className="absolute inset-0 w-full h-full">
             <Image
-                src={active.imageUrl || fallbackImg}
+                src={active.imageUrl}
                 alt={active.name}
                 fill
                 priority
@@ -226,11 +223,14 @@ export function PackagesSection() {
             />
          </div>
 
-         {/* Overlay Gradient (Left to Right) */}
-         <div className="absolute inset-0 bg-gradient-to-r from-[#111310]/95 via-[#111310]/60 to-transparent z-10" />
+         {/* Overlay Gradient (Left to Right) - Agar Teks Terbaca */}
+         <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/50 to-transparent z-10" />
          
-         {/* Vignette */}
-         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(17,19,16,0.6)_100%)] z-10" />
+         {/* Vignette Halus */}
+         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] z-10" />
+         
+         {/* Pattern Texture */}
+         <div className="absolute inset-0 opacity-[0.05] pointer-events-none z-10" style={{ backgroundImage: 'var(--bg-pattern-image)' }} />
       </div>
 
 
@@ -240,12 +240,12 @@ export function PackagesSection() {
         {/* --- SECTION HEADER --- */}
         <div className="w-full mb-8 md:mb-12 z-40">
            <div className="flex items-center gap-3 mb-3">
-             <div className="w-12 h-[2px] bg-[#ffd8a6]"></div>
-             <span className="text-[#ffd8a6] text-[10px] font-bold tracking-[0.3em] uppercase">
-               Exclusive Offers
+             <div className="w-12 h-[2px] bg-[var(--secondary)]"></div>
+             <span className="text-[var(--secondary)] text-[10px] font-bold tracking-[0.3em] uppercase">
+               Experiences
              </span>
            </div>
-           <h2 className="text-[#fef7e5]/90 font-light text-xl md:text-3xl tracking-widest uppercase opacity-90 leading-relaxed" style={{ fontFamily: 'var(--font-heading), serif' }}>
+           <h2 className="text-white/90 font-[family-name:var(--font-heading)] text-xl md:text-3xl tracking-widest uppercase opacity-90 leading-relaxed">
              Lengkapi Perjalanan Anda
            </h2>
         </div>
@@ -258,29 +258,41 @@ export function PackagesSection() {
             <div ref={textRef} className="space-y-6 md:space-y-8">
               
               <div className="flex items-center gap-3">
-                <span className="px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] bg-[#ffd8a6] text-[#111310] rounded-sm">
-                  {active.packageType || "Package"}
+                <span className="px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] bg-[var(--secondary)] text-[var(--bg-surface)] rounded-[var(--radius)]">
+                  {active.category}
                 </span>
-                <div className="flex gap-1 text-[#ffd8a6]">
+                <div className="flex gap-1 text-[var(--secondary)]">
                   {[...Array(5)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
                 </div>
               </div>
 
-              <h1 className="text-5xl md:text-7xl lg:text-8xl uppercase leading-[0.9] tracking-tight drop-shadow-2xl" style={{ fontFamily: 'var(--font-heading), serif' }}>
+              <h1 className="font-[family-name:var(--font-heading)] text-5xl md:text-7xl lg:text-8xl uppercase leading-[0.9] tracking-tight drop-shadow-2xl">
                 {renderTwoToneTitle(active.name)}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-[#fef7e5]/90 text-sm font-medium border-l-2 border-[#ffd8a6] pl-4">
+              <div className="flex flex-wrap items-center gap-4 text-white/90 text-sm font-[family-name:var(--font-body)] font-medium border-l-2 border-[var(--secondary)] pl-4">
                 <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-[#ffd8a6]" /> 
-                    <span>Bumi Anyom</span>
+                    <MapPin size={16} className="text-[var(--secondary)]" /> 
+                    <span>{active.vendorName || "Indonesia"}</span>
+                </div>
+                <div className="w-1 h-1 rounded-full bg-white/40" />
+                {active.duration && active.duration !== "-" && (
+                    <div className="flex items-center gap-2">
+                        <Clock size={16} className="text-[var(--secondary)]" /> 
+                        <span>{active.duration}</span>
+                    </div>
+                )}
+                <div className="w-1 h-1 rounded-full bg-white/40" />
+                <div className="flex items-center gap-2">
+                    <Users size={16} className="text-[var(--secondary)]" /> 
+                    <span>Max {active.maxPax} Pax</span>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex flex-col">
                    <p className="text-[9px] uppercase tracking-widest text-white/50 mb-1">Starting From</p>
-                   <p className="text-3xl md:text-4xl text-[#ffd8a6] font-medium" style={{ fontFamily: 'var(--font-heading), serif' }}>
+                   <p className="text-3xl md:text-4xl font-[family-name:var(--font-heading)] text-[var(--secondary)] font-medium">
                       {formatIDR(active.price)}
                    </p>
                 </div>
@@ -288,24 +300,13 @@ export function PackagesSection() {
                 <p className="text-white/70 text-sm max-w-lg line-clamp-3 leading-relaxed font-light border-t border-white/10 pt-4">
                   {active.description}
                 </p>
-
-                {active.features && active.features.length > 0 && (
-                  <ul className="grid grid-cols-2 gap-2 mt-4 max-w-lg">
-                    {active.features.slice(0, 4).map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-white/80 font-light">
-                        <CheckCircle2 size={14} className="text-[#788069] shrink-0 mt-0.5" />
-                        <span className="line-clamp-1">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
 
               <div className="pt-2 flex gap-4 items-center">
                 <Link
                   href={`/packages/${active.id}`}
-                  className="group inline-flex items-center gap-3 px-8 py-3.5 rounded-full text-white font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-lg hover:shadow-[#788069]/30 border border-white/10"
-                  style={{ background: 'linear-gradient(135deg, #788069 0%, #5a614e 100%)' }}
+                  className="group inline-flex items-center gap-3 px-8 py-3.5 rounded-full text-white font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-lg hover:shadow-[var(--secondary)]/30 border border-white/10"
+                  style={{ background: 'var(--btn-gradient)' }}
                 >
                   Explore Details
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -330,23 +331,23 @@ export function PackagesSection() {
                 {items.slice(1, 5).map((pkg, i) => (
                   <div
                     key={pkg.id}
-                    ref={(el) => { if (el) cardsRef.current[i] = el; }}
+                    ref={(el) => { if(el) cardsRef.current[i] = el; }}
                     className="absolute top-0 right-0 w-full h-full origin-bottom-right cursor-pointer"
                     onClick={handleNext}
                   >
-                     <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-[#111310] group">
+                    <div className="relative w-full h-full rounded-[var(--radius)] overflow-hidden shadow-2xl border border-white/10 bg-neutral-900 group">
                       <Image
-                        src={pkg.imageUrl || fallbackImg}
+                        src={pkg.imageUrl}
                         alt={pkg.name}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       {/* Gradient Overlay pada Kartu */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
                       
                       <div className="absolute bottom-5 left-5 right-5 z-20">
-                        <p className="text-[8px] uppercase tracking-widest text-[#ffd8a6] mb-1 font-bold">Next</p>
-                        <h3 className="text-sm font-bold uppercase leading-tight text-white line-clamp-2 drop-shadow-md" style={{ fontFamily: 'var(--font-heading), serif' }}>
+                        <p className="text-[8px] uppercase tracking-widest text-[var(--secondary)] mb-1 font-bold">Next</p>
+                        <h3 className="font-[family-name:var(--font-heading)] text-sm font-bold uppercase leading-tight text-white line-clamp-2 drop-shadow-md">
                           {pkg.name}
                         </h3>
                       </div>
@@ -357,7 +358,7 @@ export function PackagesSection() {
 
              {/* Auto-Scroll Progress Bar */}
              <div className="absolute bottom-0 right-0 w-[200px] md:w-[240px] h-[2px] bg-white/10 rounded-full overflow-hidden mt-6">
-                 <div ref={progressRef} className="h-full bg-[#ffd8a6] w-full origin-left scale-x-0 shadow-[0_0_10px_#ffd8a6]" />
+                 <div ref={progressRef} className="h-full bg-[var(--secondary)] w-full origin-left scale-x-0 shadow-[0_0_10px_var(--secondary)]" />
              </div>
           </div>
 

@@ -105,9 +105,9 @@ export const PartnersSection = () => {
                 {/* Orb 1: Sage Green */}
                 <div className="gsap-ambient-orb absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] min-w-[300px] min-h-[300px] rounded-full bg-[#788069]/10 blur-[80px] md:blur-[120px]" />
                 {/* Orb 2: Warm Sand */}
-                <div className="gsap-ambient-orb absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] min-w-[400px] min-h-[400px] rounded-full bg-[#e8e0d5]/40 blur-[100px] md:blur-[140px]" />
+                <div className="gsap-ambient-orb absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] min-w-[400px] min-h-[400px] rounded-full bg-[#ffd8a6]/25 blur-[100px] md:blur-[140px]" />
                 {/* Orb 3: Terracotta hint */}
-                <div className="gsap-ambient-orb absolute top-[20%] right-[15%] w-[30vw] h-[30vw] min-w-[200px] min-h-[200px] rounded-full bg-[#c08261]/5 blur-[80px] md:blur-[100px]" />
+                <div className="gsap-ambient-orb absolute top-[20%] right-[15%] w-[30vw] h-[30vw] min-w-[200px] min-h-[200px] rounded-full bg-[#788069]/5 blur-[80px] md:blur-[100px]" />
             </div>
 
             {/* Subtle noise texture over background */}

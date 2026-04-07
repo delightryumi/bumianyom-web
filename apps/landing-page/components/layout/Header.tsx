@@ -77,10 +77,10 @@ function RoomCard({ room }: { room: RoomType }) {
       href={`/rooms/${room.id}`}
       className="shrink-0 group flex flex-col w-44 rounded-md overflow-hidden border border-gray-100 hover:border-[#788069]/40 hover:shadow-md transition-all duration-300 bg-white"
     >
-      <div className="w-full h-20 bg-[#f0ede7] overflow-hidden">
+      <div className="w-full h-20 bg-[#fef7e5] overflow-hidden">
         {img
           ? <img src={img} alt={room.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          : <div className="w-full h-full bg-gradient-to-br from-[#e8e0d5] to-[#d4c9ba]" />
+          : <div className="w-full h-full bg-gradient-to-br from-[#fef7e5] to-[#ffd8a6]/40" />
         }
       </div>
       <div className="p-3 flex-grow">
@@ -103,10 +103,10 @@ function PackageCard({ pkg }: { pkg: Package }) {
       href={`/packages/${pkg.id}`}
       className="shrink-0 group flex flex-col w-44 rounded-md overflow-hidden border border-gray-100 hover:border-[#788069]/40 hover:shadow-md transition-all duration-300 bg-white"
     >
-      <div className="w-full h-20 bg-[#f0ede7] overflow-hidden relative">
+      <div className="w-full h-20 bg-[#fef7e5] overflow-hidden relative">
         {pkg.imageUrl
           ? <img src={pkg.imageUrl} alt={pkg.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          : <div className="w-full h-full bg-gradient-to-br from-[#e8e0d5] to-[#d4c9ba]" />
+          : <div className="w-full h-full bg-gradient-to-br from-[#fef7e5] to-[#ffd8a6]/40" />
         }
         {pkg.packageType && (
           <span className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded-md text-[7px] font-black uppercase tracking-widest text-[#788069]">
@@ -135,10 +135,10 @@ function AttractionCard({ attr }: { attr: Attraction }) {
       href="/attractions"
       className="shrink-0 group flex flex-col w-44 rounded-md overflow-hidden border border-gray-100 hover:border-[#788069]/40 hover:shadow-md transition-all duration-300 bg-white"
     >
-      <div className="w-full h-20 bg-[#f0ede7] overflow-hidden relative">
+      <div className="w-full h-20 bg-[#fef7e5] overflow-hidden relative">
         {img
           ? <img src={img} alt={attr.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          : <div className="w-full h-full bg-gradient-to-br from-[#e8e0d5] to-[#d4c9ba] flex items-center justify-center">
+          : <div className="w-full h-full bg-gradient-to-br from-[#fef7e5] to-[#ffd8a6]/40 flex items-center justify-center">
             <MapPin size={24} className="text-[#788069]/40" />
           </div>
         }

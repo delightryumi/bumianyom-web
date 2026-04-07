@@ -127,13 +127,19 @@ export const PromoSection = () => {
         return () => ctx.revert();
     }, [loading, promo]);
 
+    useEffect(() => {
+        if (!loading) {
+            setTimeout(() => ScrollTrigger.refresh(), 100);
+        }
+    }, [loading, promo?.isActive]);
+
     if (loading) return null;
     if (!promo?.isActive) return null;
 
     return (
         <section
             ref={sectionRef}
-            className="w-full relative bg-[#F9F7F2] py-24 md:py-32 overflow-hidden flex flex-col items-center"
+            className="w-full relative bg-[#fef7e5] rounded-t-[2.5rem] py-24 md:py-32 overflow-hidden flex flex-col items-center"
             id="special-offers"
         >
             <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col items-center">
@@ -150,7 +156,7 @@ export const PromoSection = () => {
                 <div className="relative w-full max-w-[1100px] flex flex-col items-center">
                     <div
                         ref={containerRef}
-                        className="relative w-full flex flex-col md:flex-row bg-white rounded-3xl shadow-[0_30px_70px_rgba(0,0,0,0.08)] border border-stone-100 overflow-hidden h-auto md:h-[360px]"
+                        className="relative w-full flex flex-col md:flex-row bg-white rounded-3xl shadow-[0_30px_70px_rgba(120,128,105,0.12)] border border-[#ffd8a6]/40 overflow-hidden h-auto md:h-[360px]"
                     >
                         {/* 70% AREA: Pure Visual + Glass Effect */}
                         <div className="w-full md:w-[70%] relative overflow-hidden group">
@@ -162,7 +168,7 @@ export const PromoSection = () => {
                                     className="w-full h-full object-cover transition-all duration-[2s] group-hover:scale-105"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-stone-100" />
+                                <div className="w-full h-full bg-[#fef7e5]" />
                             )}
                             
                             {/* Glass Shimmer Interaction Layer */}
@@ -173,7 +179,7 @@ export const PromoSection = () => {
 
                             <div className="absolute top-6 left-6 z-20">
                                 <div ref={tagRef} className="flex items-center gap-2 px-3 py-1.5 bg-black/10 backdrop-blur-md rounded-full border border-white/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-peach animate-pulse" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#ffd8a6] animate-pulse" />
                                     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Privileged</span>
                                 </div>
                             </div>
@@ -181,13 +187,13 @@ export const PromoSection = () => {
 
                         {/* THE PERFORATION / PUNCHES (at 70%) */}
                         <div className="hidden md:flex flex-col items-center justify-between absolute left-[70%] top-0 bottom-0 -translate-x-1/2 py-4 z-20 pointer-events-none">
-                            <div className="w-8 h-8 bg-[#F9F7F2] rounded-full border border-stone-100 -mt-8 shadow-inner" />
-                            <div className="flex-1 border-l-2 border-dashed border-stone-200 my-4" />
-                            <div className="w-8 h-8 bg-[#F9F7F2] rounded-full border border-stone-100 -mb-8 shadow-inner" />
+                            <div className="w-8 h-8 bg-[#fef7e5] rounded-full border border-[#ffd8a6]/30 -mt-8 shadow-inner" />
+                            <div className="flex-1 border-l-2 border-dashed border-[#ffd8a6]/40 my-4" />
+                            <div className="w-8 h-8 bg-[#fef7e5] rounded-full border border-[#ffd8a6]/30 -mb-8 shadow-inner" />
                         </div>
 
                         {/* 30% AREA: Title + Code Stub */}
-                        <div className="w-full md:w-[30%] p-10 flex flex-col items-center justify-center bg-white relative border-t md:border-t-0 md:border-l border-stone-50">
+                        <div className="w-full md:w-[30%] p-10 flex flex-col items-center justify-center bg-white relative border-t md:border-t-0 md:border-l border-[#ffd8a6]/20">
                             <h3
                                 ref={titleRef}
                                 className="text-2xl md:text-3xl lg:text-4xl text-[#1a1a1a] leading-tight text-center mb-8"
@@ -196,7 +202,7 @@ export const PromoSection = () => {
                                 {promo.title}
                             </h3>
 
-                            <div className="w-12 h-[1px] bg-stone-100 mb-8" />
+                            <div className="w-12 h-[1px] bg-[#ffd8a6]/40 mb-8" />
 
                             {promo.promoCode && (
                                 <div
@@ -206,20 +212,20 @@ export const PromoSection = () => {
                                         navigator.clipboard.writeText(promo.promoCode);
                                     }}
                                 >
-                                    <span className="text-[10px] block uppercase tracking-[0.2em] text-stone-400 mb-3 font-bold">Unlocking Code</span>
-                                    <div className="py-4 px-2 bg-stone-50 border border-stone-100 rounded-xl relative overflow-hidden mb-4 group-hover/code:bg-[#1a1a1a] group-hover/code:text-white transition-all duration-500">
+                                    <span className="text-[10px] block uppercase tracking-[0.2em] text-[#788069]/60 mb-3 font-bold">Unlocking Code</span>
+                                    <div className="py-4 px-2 bg-[#fef7e5]/50 border border-[#ffd8a6]/30 rounded-xl relative overflow-hidden mb-4 group-hover/code:bg-[#788069] group-hover/code:text-white transition-all duration-500">
                                         <span className="text-2xl font-serif tracking-[0.15em] uppercase">{promo.promoCode}</span>
                                         <div className="absolute top-2 right-2 opacity-0 group-hover/code:opacity-40 transition-opacity">
                                             <TicketPercent size={12} className="text-white" />
                                         </div>
                                     </div>
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-stone-300 group-hover/code:text-sage transition-colors">Tap to Copy</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-[#788069]/40 group-hover/code:text-[#ffd8a6] transition-colors">Tap to Copy</span>
                                 </div>
                             )}
                             
                             {promo.expiryDate && (
-                                <div className="mt-8 flex items-center gap-2 text-[9px] font-bold text-stone-400 uppercase tracking-widest">
-                                    <CalendarDays size={12} className="text-stone-300" />
+                                <div className="mt-8 flex items-center gap-2 text-[9px] font-bold text-[#788069]/50 uppercase tracking-widest">
+                                    <CalendarDays size={12} className="text-[#788069]/40" />
                                     <span>Until {new Date(promo.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                 </div>
                             )}

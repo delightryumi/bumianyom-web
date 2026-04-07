@@ -13,9 +13,10 @@ import { useGSAP } from '@gsap/react';
 import { AboutBookingSection } from "@/components/sections/about/AboutBookingSection";
 import { PromoSection } from "@/components/sections/promo/PromoSection";
 import { RoomsSection } from "@/components/sections/rooms/RoomsSection";
-import { PartnersSection } from "@/components/sections/partners/PartnersSection";
 import { PackagesSection } from "@/components/sections/packages/PackagesSection";
-import { GallerySection } from "@/components/sections/gallery/GallerySection";
+import { PartnersSection } from "@/components/sections/partners/PartnersSection";
+
+import { WideLandscapeGallery } from "@/components/sections/gallery/WideLandscapeGallery";
 import { FooterSection } from "@/components/sections/footer/FooterSection";
 
 if (typeof window !== 'undefined') {
@@ -204,8 +205,37 @@ export default function Home() {
       }
     });
 
-    // MAGAZINE STACKING EFFECT (About → Rooms)
+    // ── Post-Hero GSAP Animations ──
     const select = gsap.utils.selector(mainRef);
+
+    // MAGAZINE-OPEN EFFECT (Hero → Post-Hero Sections)
+    const postHeroEl = select('.gsap-post-hero')[0] as HTMLElement;
+    if (postHeroEl) {
+      gsap.fromTo(postHeroEl,
+        {
+          rotateX: -8,
+          scale: 0.95,
+          opacity: 0.3,
+          y: 60,
+          transformOrigin: "top center",
+        },
+        {
+          rotateX: 0,
+          scale: 1,
+          opacity: 1,
+          y: 0,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: postHeroEl,
+            start: "top 95%",
+            end: "top 40%",
+            scrub: 1.5,
+          },
+        }
+      );
+    }
+
+    // MAGAZINE STACKING EFFECT (About → Rooms)
     const aboutCardEl = select('.gsap-about-card')[0] as HTMLElement;
     const roomsTriggerEl = select('.gsap-rooms-reveal')[0] as HTMLElement;
 
@@ -314,16 +344,16 @@ export default function Home() {
         </div>
 
         {/* POST-HERO SECTIONS */}
-        <div className="relative w-full z-50 bg-[#fdfbf7]">
+        <div className="gsap-post-hero relative w-full z-50 bg-[#fdfbf7]" style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}>
 
           {/* ── CARD 1: Promo (Reveal flow — slides over Hero) ── */}
-          <div className="gsap-promo-reveal relative z-20 bg-[#fef7e5] rounded-t-[2.5rem]">
+          <div className="gsap-promo-reveal relative z-20">
             <PromoSection />
           </div>
 
           {/* ── CARD 2: About (Internal pinning handles scroll) ── */}
           <div className="gsap-about-card relative z-30">
-            <div className="rounded-t-[2.5rem] overflow-hidden bg-[#fef7e5]">
+            <div className="rounded-t-[2.5rem] bg-[#fef7e5]">
               <AboutBookingSection />
             </div>
           </div>
@@ -333,23 +363,23 @@ export default function Home() {
             <RoomsSection />
           </div>
 
+          {/* ── CARD 3.5: Packages ── */}
+          <div className="gsap-packages-reveal relative z-40">
+            <PackagesSection />
+          </div>
+
           {/* ── CARD 4: Partners (Dark, slide-up) ── */}
           <div className="gsap-partners-reveal relative z-40 bg-[#111310]">
             <PartnersSection />
           </div>
 
-          {/* ── CARD 5: Packages (Cinematic, slide-up) ── */}
-          <div className="gsap-packages-reveal relative z-50 bg-[#fdfbf7]">
-            <PackagesSection />
+          {/* ── NEW WIDE LANDSCAPE GALLERY (No GSAP Magazine wrapper) ── */}
+          <div className="relative z-50 bg-[#111310]">
+            <WideLandscapeGallery />
           </div>
 
-          {/* ── CARD 6: Gallery (Aesthetic Masonry, slide-up) ── */}
-          <div className="gsap-gallery-reveal relative z-[60] bg-[#fdfbf7]">
-            <GallerySection />
-          </div>
-
-          {/* ── FOOTER (Slide-up reveal - Ultra-Wide Cinematic) ── */}
-          <div className="gsap-footer-reveal relative z-[70] bg-[#fdfbf7]">
+          {/* ── FOOTER (Magazine Close Reveal) ── */}
+          <div className="gsap-footer-reveal relative z-[70] bg-[#fdfbf7]" style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}>
             <FooterSection />
           </div>
 

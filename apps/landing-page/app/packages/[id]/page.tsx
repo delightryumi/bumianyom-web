@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { FooterSection } from "@/components/sections/footer/FooterSection";
-import { usePackage } from "@/services/useServices";
+import { usePackageById } from "@/components/sections/packages/usePackages";
 import { useFooter } from "@/services/useFooter";
 import { 
     Check, ArrowRight, Clock, Users, Star, 
@@ -16,7 +16,7 @@ import gsap from "gsap";
 
 export default function PackageDetailsPage() {
     const { id } = useParams();
-    const { pkg, loading: pkgLoading } = usePackage(id as string);
+    const { pkg, loading: pkgLoading } = usePackageById(id as string);
     const { data: footerData, loading: footerLoading } = useFooter();
     const [scrolled, setScrolled] = useState(false);
 
@@ -80,7 +80,7 @@ export default function PackageDetailsPage() {
                 {/* ── Hero Section ── */}
                 <section className="relative h-[70vh] w-full overflow-hidden">
                     <Image 
-                        src={pkg.imageUrl} 
+                        src={pkg.imageUrl || "https://images.unsplash.com/photo-1542314831-c6a4d14d8c1c?auto=format&fit=crop&q=80"} 
                         alt={pkg.name}
                         fill
                         priority
@@ -91,7 +91,7 @@ export default function PackageDetailsPage() {
                     <div className="relative h-full max-w-7xl mx-auto px-6 flex flex-col justify-end pb-20">
                         <div className="reveal-item space-y-4">
                             <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold uppercase tracking-[0.3em] rounded-full inline-block">
-                                {pkg.category}
+                                {pkg.packageType || "Package"}
                             </span>
                             <h1 className="text-5xl md:text-7xl lg:text-8xl text-white uppercase leading-[0.9]" style={{ fontFamily: 'var(--font-display), serif' }}>
                                 {pkg.name.split(" ").map((word, i) => (
@@ -146,7 +146,7 @@ export default function PackageDetailsPage() {
                                     <div>
                                         <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#788069]/60">Investment</span>
                                         <div className="flex items-baseline gap-2">
-                                            <h3 className="text-4xl font-serif">{formatIDR(pkg.price)}</h3>
+                                            <h3 className="text-4xl font-serif">{formatIDR(Number(pkg.price.replace(/\D/g, '')))}</h3>
                                             <span className="text-xs text-[#1a1a1a]/40 uppercase tracking-widest">/ Nett</span>
                                         </div>
                                     </div>
@@ -164,7 +164,7 @@ export default function PackageDetailsPage() {
                                                 <Users size={16} />
                                                 <span>Availability</span>
                                             </div>
-                                            <span className="font-medium">Up to {pkg.maxPax || 2} Pax</span>
+                                            <span className="font-medium">Flexible</span>
                                         </div>
                                     </div>
                                 </div>
