@@ -20,20 +20,39 @@ export const WidgetSection = ({ insideHero = false }: { insideHero?: boolean }) 
     // Weather Fetch (Open-Meteo is free and requires no API key)
     const fetchWeather = async () => {
       try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&timezone=Asia%2FJakarta`);
+        // We use both 'current' and 'current_weather' params to be safe across different API versions/proxies
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,is_day&current_weather=true&timezone=Asia%2FJakarta`;
+        const res = await fetch(url);
+        
+        if (!res.ok) throw new Error("Weather API Response not OK");
+        
         const data = await res.json();
+        
+        // Robust data mapping to handle multiple Open-Meteo response formats
+        const currentData = data.current || data.current_weather;
+        
+        if (!currentData) throw new Error("No current weather data found in response");
+
         setWeather({
-          temp: Math.round(data.current.temperature_2m),
-          code: data.current.weather_code,
-          isDay: data.current.is_day === 1,
+          temp: Math.round(currentData.temperature_2m ?? currentData.temperature ?? 0),
+          code: currentData.weather_code ?? currentData.weathercode ?? 0,
+          isDay: (currentData.is_day ?? currentData.is_day) == 1,
         });
       } catch (err) {
-        console.error("Failed to fetch weather", err);
+        console.error("Failed to fetch weather:", err);
+        // We don't set error state to avoid showing it to users, 
+        // the "Reading" spinner remains until it finally succeeds or retries.
       }
     };
-    fetchWeather();
 
-    return () => clearInterval(interval);
+    fetchWeather();
+    // Refresh weather every 15 minutes
+    const weatherInterval = setInterval(fetchWeather, 900000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(weatherInterval);
+    };
   }, []);
 
   // WMO Weather interpretation codes
