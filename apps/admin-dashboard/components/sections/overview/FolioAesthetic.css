@@ -1,0 +1,102 @@
+.folio-container {
+    background-color: #ffffff;
+    background-image: 
+        radial-gradient(#f1f1f1 1px, transparent 1px),
+        linear-gradient(to right, #f9f9f9 1px, transparent 1px);
+    background-size: 20px 20px, 40px 100%;
+    position: relative;
+    box-shadow: 
+        0 0 0 1px rgba(0,0,0,0.05),
+        0 20px 50px -10px rgba(0,0,0,0.1);
+}
+
+.folio-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 40px;
+    bottom: 0;
+    width: 1px;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.folio-header-badge {
+    padding: 4px 12px;
+    background: #1A1C14;
+    color: #ffd8a6;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    clip-path: polygon(0% 0%, 95% 0%, 100% 50%, 95% 100%, 0% 100%);
+}
+
+.folio-label {
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #a8a29e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.folio-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1c1917;
+    text-transform: uppercase;
+    font-family: var(--font-outfit);
+}
+
+.folio-mono {
+    font-family: var(--font-jb-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.folio-divider-dashed {
+    border-top: 1px dashed #e7e5e4;
+    height: 0;
+    width: 100%;
+}
+
+.folio-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f4;
+}
+
+.folio-total-box {
+    background: #fafaf9;
+    border: 1px solid #e7e5e4;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.folio-stamp {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    width: 100px;
+    height: 100px;
+    border: 3px double rgba(120, 128, 105, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-15deg);
+    pointer-events: none;
+}
+
+.folio-stamp::after {
+    content: 'AUDITED';
+    font-size: 10px;
+    font-weight: 900;
+    color: rgba(120, 128, 105, 0.3);
+    letter-spacing: 0.2em;
+}

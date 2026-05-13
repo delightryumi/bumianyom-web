@@ -11,8 +11,9 @@ import {
 } from "motion/react";
 import {
     BarChart2, FileImage, Home, Layout, Coffee,
-    Info, Grid, Settings, LogOut,
-    MapPin, Gift, Package, Search, ChevronLeft, Menu
+    Info, Grid, Settings, LogOut, FileText,
+    MapPin, Gift, Package, Search, ChevronLeft, Menu,
+    TrendingUp, PieChart
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -23,11 +24,9 @@ import React, { useEffect, useRef, useState } from "react";
 export type SectionType =
     | "overview" | "logo" | "hero" | "room-type"
     | "about" | "gallery" | "footer"
-    | "attractions" | "promo" | "packages" | "seo";
+    | "attractions" | "promo" | "packages" | "seo" | "invoice" | "forecast" | "pnl";
 
 interface SidebarProps {
-    activeSection: SectionType;
-    setActiveSection: (section: SectionType) => void;
     isCollapsed: boolean;
     setIsCollapsed: (collapsed: boolean) => void;
 }
@@ -132,13 +131,18 @@ function DockNavItem({
     );
 }
 
+import { usePathname, useRouter } from "next/navigation";
+
 /* ── Main Sidebar ── */
 export const Sidebar: React.FC<SidebarProps> = ({
-    activeSection,
-    setActiveSection,
     isCollapsed,
     setIsCollapsed,
 }) => {
+    const pathname = usePathname();
+    const router = useRouter();
+    
+    // Get the first path segment as the active section
+    const activeSection = pathname.split("/")[1] || "overview";
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const mouseY = useMotionValue(Infinity);
 
@@ -159,6 +163,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const navItems: { id: SectionType; label: string; icon: React.ReactNode }[] = [
         { id: "overview", label: "Overview", icon: <BarChart2 size={18} /> },
+        { id: "forecast", label: "Forecast & POS", icon: <TrendingUp size={18} /> },
+        { id: "invoice", label: "Create Invoice", icon: <FileText size={18} /> },
+        { id: "pnl", label: "PNL Statement", icon: <PieChart size={18} /> },
         { id: "logo", label: "Logo (Light/Dark)", icon: <FileImage size={18} /> },
         { id: "hero", label: "Hero Management", icon: <Home size={18} /> },
         { id: "room-type", label: "Room Categories", icon: <Layout size={18} /> },
@@ -244,7 +251,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 label={item.label}
                                 isActive={activeSection === item.id}
                                 mouseY={mouseY}
-                                onClick={() => setActiveSection(item.id)}
+                                onClick={() => {
+                                    router.push(`/${item.id}`);
+                                    if (window.innerWidth <= 1024) setIsCollapsed(true);
+                                }}
                             />
                         ))}
 
@@ -298,7 +308,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             whileTap={{ scale: 0.97 }}
                             transition={{ type: "spring", stiffness: 300, damping: 24 }}
                             className={`nav-item ${activeSection === item.id ? "active" : ""}`}
-                            onClick={() => setActiveSection(item.id)}
+                            onClick={() => {
+                                router.push(`/${item.id}`);
+                                if (window.innerWidth <= 1024) setIsCollapsed(true);
+                            }}
                         >
                             {item.icon}
                             <motion.span

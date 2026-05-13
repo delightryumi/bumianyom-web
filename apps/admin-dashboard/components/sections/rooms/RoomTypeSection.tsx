@@ -46,6 +46,8 @@ export const RoomTypeSection = () => {
         setNewRoomSizeValue,
         newRoomSizeUnit,
         setNewRoomSizeUnit,
+        newRoomCount,
+        setNewRoomCount,
         saving,
         editingRoom,
         handleAdd,
@@ -159,8 +161,8 @@ export const RoomTypeSection = () => {
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-slate-300"><Home size={48} /></div>
                                     )}
-                                    <div className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur rounded-lg border border-slate-100 text-[10px] font-bold text-slate-600 flex items-center gap-2">
-                                        <Images size={12} /> {type.images?.length || 0}
+                                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur rounded-lg border border-slate-100 text-[10px] font-bold text-slate-600 flex items-center gap-2">
+                                        <Home size={12} className="text-sage" /> {type.roomCount || 0} Units
                                     </div>
                                 </div>
 
@@ -314,6 +316,20 @@ export const RoomTypeSection = () => {
                                                     <option key={unit.value} value={unit.value}>{unit.label}</option>
                                                 ))}
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <label className="label-clean">Room Inventory</label>
+                                        <div className="flex items-center gap-4">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                className="input-clean !py-6 text-center w-24"
+                                                value={newRoomCount}
+                                                onChange={(e) => setNewRoomCount(parseInt(e.target.value) || 1)}
+                                            />
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Available Units</span>
                                         </div>
                                     </div>
 

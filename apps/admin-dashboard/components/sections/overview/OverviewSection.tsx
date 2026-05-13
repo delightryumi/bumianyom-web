@@ -1,233 +1,311 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
-import {
-    BedDouble,
-    FileImage,
-    Globe,
-    Zap,
-    Shield,
-    Layers,
-    Waves,
-    ArrowUpRight,
-    Server,
-    Navigation,
-    Info,
-    Package,
-    MessageSquare,
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+    Eye, 
+    Pencil, 
+    Trash2,
+    Activity,
+    Plus,
+    Calendar,
+    ArrowRight,
+    LogIn,
+    XCircle,
+    LayoutDashboard,
+    Download,
+    FileText
 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useOverview } from "./useOverview";
-import { SectionType } from "../../layout/Sidebar";
+import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
+import Image from "next/image";
 
-/* ── Brand Colors ── */
-const PEACH = "#ffd8a6";
-const SAGE = "#788069";
+// Modular Imports
+import "./OverviewStyles.css";
+import { 
+    StatCard, 
+    GuestDetailModal, 
+    getChannelLogo 
+} from "./OverviewComponents";
 
-/* ── Animations ── */
-const stagger = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
-};
-const rise = {
-    hidden: { opacity: 0, y: 14 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-};
-
-/* ═══════════════════════════════════════════════
-   MAIN EXPORT
-   ═══════════════════════════════════════════════ */
 interface OverviewSectionProps {
-    onNavigate: (section: SectionType) => void;
+    onNavigate?: (section: any) => void;
 }
 
+const SAGE = "#788069";
+const PEACH = "#ffd8a6";
+
 export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) => {
-    const { roomsCount, galleryCount, attractionsCount, seoConfigured, loading } = useOverview();
+    const router = useRouter();
+    const { 
+        loading, 
+        checkInCount, checkOutCount, cancelCount,
+        todayCheckIns, todayCheckOuts, todayCanceled,
+        latestBookings, roomStatus
+    } = useOverview();
+    
+    const [selectedGuest, setSelectedGuest] = React.useState<any>(null);
+    const [isEditing, setIsEditing] = React.useState(false);
 
     const dash = loading ? "—" : null;
 
+    const handleDelete = async (booking: any) => {
+        if (!window.confirm(`Delete entry for "${booking.guestName}"?`)) return;
+        
+        try {
+            const dateStr = new Date(booking.timestamp).toISOString().split('T')[0];
+            const hotelId = "bumi-anyom-resort";
+            const docId = `${hotelId}_${dateStr}`;
+            const docRef = doc(db, "daily_revenue", docId);
+            
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const entries = docSnap.data().entries || [];
+                const updatedEntries = entries.filter((e: any) => e.timestamp !== booking.timestamp);
+                await updateDoc(docRef, { entries: updatedEntries });
+                alert("Deleted.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Failed.");
+        }
+    };
+
+    const handleEdit = (booking: any) => {
+        setSelectedGuest(booking);
+        setIsEditing(true);
+    };
+
+    // ── Export Logic ──
+    const handleExportExcel = () => {
+        const data = latestBookings.map(e => ({
+            "Waktu Input": new Date(e.timestamp).toLocaleString('id-ID'),
+            "Nama Tamu / Kategori": e.guestName || e.incomeCategory,
+            "Tipe": e.type === 'accommodation' ? 'Kamar' : 'Pendapatan Lain',
+            "Check-In": e.checkInDate || '-',
+            "Check-Out": e.checkOutDate || '-',
+            "Room Type": e.roomType || '-',
+            "Room No": e.roomNumber || '-',
+            "Channel": e.channel || 'Internal',
+            "Voucher": e.voucherCode || '-',
+            "Total Tagihan": Number(e.amount),
+            "Dibayar 1": Number(e.paidAmount1 || 0),
+            "Dibayar 2": Number(e.paidAmount2 || 0),
+            "Metode Bayar": e.paymentStatus,
+            "Split Bill": e.isSplitBill ? 'Ya' : 'Tidak',
+            "Sumber": e.source || '-',
+            "Status Transaksi": e.status,
+            "Input Oleh": e.staffName || '-',
+            "Status Kamar": e.roomStatus || '-',
+            "Status Tamu": e.guestStatus || '-',
+            "Catatan": e.note || ''
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Activity Ledger");
+        XLSX.writeFile(wb, `Detailed_Audit_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
+    const handleExportPDF = () => {
+        const doc = new jsPDF('l', 'mm', 'a4');
+        
+        doc.setFontSize(16);
+        doc.text(`Nexura Analytics - Detailed Audit Activity Ledger`, 14, 15);
+        doc.setFontSize(9);
+        doc.text(`Exported: ${new Date().toLocaleString('id-ID')} | Hotel: Bumi Anyom Resort`, 14, 22);
+        
+        const tableData = latestBookings.map(e => [
+            e.checkInDate || '-',
+            e.guestName || e.incomeCategory || 'Sale',
+            e.roomNumber || '-',
+            e.channel || 'Internal',
+            `Rp ${Number(e.amount).toLocaleString('id-ID')}`,
+            e.paymentStatus || 'Settled',
+            e.status,
+            e.staffName || '-'
+        ]);
+
+        autoTable(doc, {
+            startY: 28,
+            head: [['Date', 'Guest / Category', 'Room', 'Channel', 'Amount', 'Payment', 'Status', 'Staff']],
+            body: tableData,
+            theme: 'grid',
+            headStyles: { fillColor: [120, 128, 105], fontSize: 8 },
+            styles: { fontSize: 7, cellPadding: 2 }
+        });
+
+        doc.save(`Detailed_Audit_Ledger_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     return (
-        <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="w-full max-w-[1400px] mx-auto px-6 md:px-10 py-10 flex flex-col gap-10 font-sans"
-        >
-            {/* ─── Header ─── */}
-            <motion.header variants={rise} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-stone-200/60">
-                <div>
-                    <div className="flex items-center gap-2.5 mb-2">
-                        <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: `${PEACH}30`, color: SAGE }}>
-                            <Waves size={13} />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-400">Nexura Ecosystem</span>
-                    </div>
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-tight">
-                        Command <span style={{ color: SAGE }}>Center</span>
-                    </h1>
-                </div>
-                <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-full border border-stone-200/80 bg-white shadow-sm">
-                    <span className={`w-2 h-2 rounded-full animate-pulse ${loading ? "bg-amber-400" : "bg-emerald-500"}`} />
-                    <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">{loading ? "Syncing…" : "System Live"}</span>
-                </div>
-            </motion.header>
-
-            {/* ─── Bento Grid: Stats + Channel Manager ─── */}
-            <motion.section variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-auto">
-
-                {/* Card 1 — Room Suites (Sage) */}
-                <motion.button
-                    variants={rise}
-                    onClick={() => onNavigate("room-type")}
-                    className="group flex flex-col justify-between gap-5 p-5 md:p-6 rounded-2xl bg-white border border-stone-200/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-left"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${SAGE}14`, color: SAGE }}>
-                            <BedDouble size={17} />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 leading-tight">Room Suites</span>
-                    </div>
-                    <div>
-                        <p className="text-3xl font-extrabold text-stone-900 leading-none mb-1">{dash ?? String(roomsCount)}</p>
-                        <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Active Categories</span>
-                    </div>
-                </motion.button>
-
-                {/* Card 2 — Media Assets (Terracotta) */}
-                <motion.button
-                    variants={rise}
-                    onClick={() => onNavigate("gallery")}
-                    className="group flex flex-col justify-between gap-5 p-5 md:p-6 rounded-2xl bg-white border border-stone-200/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-left"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${PEACH}30`, color: SAGE }}>
-                            <FileImage size={17} />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 leading-tight">Media Assets</span>
-                    </div>
-                    <div>
-                        <p className="text-3xl font-extrabold text-stone-900 leading-none mb-1">{dash ?? String(galleryCount)}</p>
-                        <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">High-Res Images</span>
-                    </div>
-                </motion.button>
-
-                {/* Card 3 — SEO Health */}
-                <motion.button
-                    variants={rise}
-                    onClick={() => onNavigate("seo")}
-                    className="group flex flex-col justify-between gap-5 p-5 md:p-6 rounded-2xl bg-white border border-stone-200/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-left"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-stone-100 text-stone-500">
-                            <Globe size={17} />
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-400 leading-tight">SEO Health</span>
-                        {!seoConfigured && !loading && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                        )}
-                    </div>
-                    <div>
-                        <p className={`text-3xl font-extrabold leading-none mb-1 ${!seoConfigured && !loading ? "text-red-500" : "text-stone-900"}`}>
-                            {dash ?? (seoConfigured ? "100%" : "Check")}
-                        </p>
-                        <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Search Indexing</span>
-                    </div>
-                </motion.button>
-
-                {/* Card 4 — Channel Manager (Sage themed bento) */}
-                <motion.a
-                    variants={rise}
-                    href="https://live.ipms247.com/login/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col justify-between gap-5 p-5 md:p-6 rounded-2xl border border-stone-200/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-left overflow-hidden"
-                    style={{ background: `linear-gradient(135deg, ${SAGE}0A, ${SAGE}18)` }}
-                >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${SAGE}22`, color: SAGE }}>
-                                <ArrowUpRight size={17} />
-                            </div>
-                            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-stone-500 leading-tight">Channel Manager</span>
-                        </div>
-                        <span
-                            className="text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md"
-                            style={{ backgroundColor: `${SAGE}22`, color: SAGE }}
-                        >
-                            Live
-                        </span>
-                    </div>
-                    <div>
-                        <p className="text-lg font-extrabold leading-tight mb-1" style={{ color: SAGE }}>
-                            iPMS247
-                        </p>
-                        <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Global Real-time Sync</span>
-                    </div>
-                </motion.a>
-            </motion.section>
-
-            {/* ─── Management Modules (bento row) ─── */}
-            <motion.section variants={stagger} className="flex flex-col gap-4">
-                <div className="flex items-center gap-3 px-1">
-                    <h2 className="text-[10px] font-semibold text-stone-400 uppercase tracking-[0.2em] whitespace-nowrap">Management Module</h2>
-                    <div className="h-px flex-1 bg- stone-200/60" />
+        <div className="space-y-40">
+            {/* Simple Header */}
+            <div className="flex justify-between items-center mb-8">
+                <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-sage uppercase tracking-[0.4em]">Operational Dashboard</p>
+                    <h1 className="text-4xl font-semibold text-stone-900 uppercase font-outfit tracking-tight">Command Center</h1>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    <BentoTile icon={<Layers size={16} />} label="Hero Section" sub="Visual Interface" accent={SAGE} onClick={() => onNavigate("hero")} />
-                    <BentoTile icon={<Navigation size={16} />} label="Local Guide" sub={`${attractionsCount} Attractions`} accent={PEACH} onClick={() => onNavigate("attractions")} />
-                    <BentoTile icon={<Shield size={16} />} label="Site Identity" sub="Brand Assets" accent="#78716c" onClick={() => onNavigate("logo")} />
-                    <BentoTile icon={<Zap size={16} />} label="Active Promos" sub="Campaigns" accent={SAGE} onClick={() => onNavigate("promo")} />
-                    <BentoTile icon={<Info size={16} />} label="About Us" sub="Story & Details" accent={PEACH} onClick={() => onNavigate("about")} />
-                    <BentoTile icon={<Package size={16} />} label="Packages" sub="Special Offers" accent={SAGE} onClick={() => onNavigate("packages")} />
-                    <BentoTile icon={<MessageSquare size={16} />} label="Footer" sub="Contact & Links" accent="#78716c" onClick={() => onNavigate("footer")} />
-                </div>
-            </motion.section>
-
-            {/* ─── Footer ─── */}
-            <motion.footer variants={rise} className="mt-auto pt-6 border-t border-stone-200/60 flex items-center justify-between opacity-40 hover:opacity-70 transition-opacity">
                 <div className="flex items-center gap-2">
-                    <Server size={12} className="text-stone-400" />
-                    <span className="text-[9px] font-medium text-stone-400 tracking-widest uppercase">Nexura Cloud · Next.js</span>
+                    <button 
+                        onClick={handleExportExcel}
+                        className="h-10 w-10 flex items-center justify-center rounded-lg bg-stone-50 border border-stone-100 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+                        title="Export to Excel"
+                    >
+                        <Download size={16} />
+                    </button>
+                    <button 
+                        onClick={handleExportPDF}
+                        className="h-10 w-10 flex items-center justify-center rounded-lg bg-stone-50 border border-stone-100 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                        title="Export to PDF"
+                    >
+                        <FileText size={16} />
+                    </button>
                 </div>
-                <span className="text-[9px] font-semibold text-stone-300 tracking-[0.25em] uppercase">Bumi Anyom v2.5</span>
-            </motion.footer>
-        </motion.div>
+            </div>
+
+            {/* Section 1: Movement Grid */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <StatCard 
+                    accent={SAGE}
+                    icon={<LogIn size={18} />}
+                    label="Arrival Today" 
+                    count={dash || checkInCount}
+                    items={todayCheckIns}
+                    onItemClick={(b: any) => setSelectedGuest(b)}
+                />
+                <StatCard 
+                    accent={PEACH}
+                    icon={<Calendar size={18} />}
+                    label="Departure Today" 
+                    count={dash || checkOutCount}
+                    items={todayCheckOuts}
+                    onItemClick={(b: any) => setSelectedGuest(b)}
+                />
+                <StatCard 
+                    accent="#ef4444"
+                    icon={<XCircle size={18} />}
+                    label="Cancellations" 
+                    count={dash || cancelCount}
+                    items={todayCanceled}
+                    onItemClick={(b: any) => setSelectedGuest(b)}
+                />
+            </section>
+
+            {/* Bold Accent Divider */}
+            <div className="flex items-center justify-center gap-8 py-8">
+                <div className="h-[1px] bg-stone-100 flex-1" />
+                <div className="w-3 h-3 rounded-full border-4 border-stone-50 bg-sage/40" />
+                <div className="h-[1px] bg-stone-100 flex-1" />
+            </div>
+
+            {/* Section 2: Audit Ledger */}
+            <section className="mt-20">
+                <div className="grid grid-cols-1 gap-12 items-start">
+                    {/* Audit Ledger Card */}
+                    <section className="bento-glass rounded-none overflow-hidden">
+                        <div className="p-8 border-b border-stone-50 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-sage text-white flex items-center justify-center rounded-xl">
+                                    <Activity size={18} />
+                                </div>
+                                <div>
+                                    <h2 className="text-[11px] font-bold text-stone-900 uppercase tracking-[0.2em] mb-0.5">Activity Register</h2>
+                                    <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">Transaction stream v2.1</p>
+                                </div>
+                            </div>
+                            <p className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{latestBookings.length} Entries</p>
+                        </div>
+
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-stone-50/50">
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Guest Name</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Stay Period</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Room & Remarks</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Channel</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Financials</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest text-center">Status</th>
+                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {latestBookings.map((b, i) => (
+                                    <tr key={i} className="group hover:bg-stone-50/50 transition-all border-b border-stone-50 last:border-0">
+                                        <td className="py-6 px-8">
+                                            <p className="text-[12px] font-medium text-stone-800 uppercase font-outfit mb-1">{b.guestName || 'Sale'}</p>
+                                            <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{b.type === 'accommodation' ? 'Accommodation' : 'Service'}</p>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                            <p className="text-[11px] font-medium text-stone-600 font-mono-jb mb-1">{b.checkInDate || '---'}</p>
+                                            <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">{b.checkOutDate || '---'}</p>
+                                        </td>
+                                        <td className="py-6 px-8 max-w-[200px]">
+                                            <p className="text-[11px] font-medium text-stone-800 uppercase font-outfit truncate">{b.roomType ? `${b.roomType} ${b.roomNumber ? `(${b.roomNumber})` : ''}` : '---'}</p>
+                                            <p className="text-[9px] font-bold text-stone-400 italic truncate mt-1">{b.note || 'No internal remarks'}</p>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                            <div className="flex justify-center items-center opacity-80 group-hover:opacity-100 transition-opacity">
+                                                <Image src={getChannelLogo(b.channel)} alt="" width={24} height={24} className="object-contain" />
+                                            </div>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                            <p className="text-[13px] font-medium text-stone-900 font-mono-jb mb-1">Rp {Number(b.amount).toLocaleString('id-ID')}</p>
+                                            <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{b.paymentStatus || 'Settled'}</p>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                            <div className="flex justify-center">
+                                                {(() => {
+                                                    const statusText = (b.paymentStatus || "").toUpperCase();
+                                                    const mainStatus = (b.status || "").toUpperCase();
+                                                    let color = "text-sage";
+                                                    let label = "Lunas";
+
+                                                    if (mainStatus === 'CANCELLED') { color = "text-red-400"; label = "Cancelled"; }
+                                                    else if (statusText.includes('DP')) { color = "text-blue-400"; label = "Deposit"; }
+                                                    else if (statusText.includes('KURANG')) { color = "text-amber-500"; label = "Balance"; }
+
+                                                    return (
+                                                        <span className={`text-[8px] font-bold uppercase tracking-[0.1em] px-3 py-1 rounded-full bg-white border border-stone-100 ${color}`}>
+                                                            {label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </td>
+                                        <td className="py-6 px-8">
+                                            <div className="flex justify-center items-center gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); setSelectedGuest(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-900 hover:bg-white transition-all"><Eye size={14} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-blue-500 hover:bg-white transition-all"><Pencil size={14} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-white transition-all"><Trash2 size={14} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    </section>
+                </div>
+            </section>
+
+            {/* Detail Folio */}
+            <AnimatePresence>
+                {selectedGuest && (
+                    <GuestDetailModal 
+                        guest={selectedGuest} 
+                        isEditing={isEditing}
+                        onClose={() => { setSelectedGuest(null); setIsEditing(false); }} 
+                    />
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
-
-/* ═══════════════════════════════════════════════
-   Bento Tile — small action card
-   ═══════════════════════════════════════════════ */
-function BentoTile({ icon, label, sub, accent, onClick }: {
-    icon: React.ReactNode;
-    label: string;
-    sub: string;
-    accent: string;
-    onClick: () => void;
-}) {
-    return (
-        <motion.button
-            variants={rise}
-            onClick={onClick}
-            className="group flex items-center gap-3 p-4 rounded-xl bg-white border border-stone-200/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 text-left w-full"
-        >
-            <div
-                className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border transition-all duration-300 group-hover:text-white"
-                style={{
-                    backgroundColor: `${accent}0D`,
-                    borderColor: `${accent}1A`,
-                    color: accent,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accent; e.currentTarget.style.color = "#fff"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = `${accent}0D`; e.currentTarget.style.color = accent; }}
-            >
-                {icon}
-            </div>
-            <div className="flex flex-col min-w-0 gap-0.5">
-                <span className="text-xs font-bold text-stone-800 leading-tight">{label}</span>
-                <span className="text-[10px] text-stone-400 leading-tight">{sub}</span>
-            </div>
-        </motion.button>
-    );
-}

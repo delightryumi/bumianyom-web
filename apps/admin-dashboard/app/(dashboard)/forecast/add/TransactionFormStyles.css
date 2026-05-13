@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100;300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+.font-outfit { font-family: 'Outfit', sans-serif; }
+.font-mono-jb { font-family: 'JetBrains Mono', monospace; }
+
+.transaction-input::-webkit-outer-spin-button,
+.transaction-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type=number].transaction-input { -moz-appearance: textfield; }
+
+.folio-container {
+    background: white;
+    position: relative;
+    box-shadow: 40px 40px 80px rgba(0,0,0,0.03);
+    border-radius: 24px;
+}
+
+.folio-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    background: #788069;
+}
+
+.luxury-input:focus-within {
+    border-color: #788069;
+    background: #fdfdfd;
+    border-radius: 12px;
+}
+
+.custom-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d4d4d8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.5rem center;
+    background-size: 1rem;
+}
+
+.paper-texture {
+    background-color: #ffffff;
+    background-image: radial-gradient(#f0f0f0 0.5px, transparent 0.5px);
+    background-size: 10px 10px;
+}

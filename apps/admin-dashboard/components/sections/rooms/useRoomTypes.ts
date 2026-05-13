@@ -37,6 +37,7 @@ export interface RoomType {
     roomSize?: string; // Legacy
     roomSizeValue?: number;
     roomSizeUnit?: string;
+    roomCount?: number;
     createdAt?: string;
 }
 
@@ -54,6 +55,7 @@ export const useRoomTypes = () => {
     const [newCapacity, setNewCapacity] = useState<number>(2);
     const [newRoomSizeValue, setNewRoomSizeValue] = useState<number>(0);
     const [newRoomSizeUnit, setNewRoomSizeUnit] = useState<string>("m2");
+    const [newRoomCount, setNewRoomCount] = useState<number>(1);
 
     const [saving, setSaving] = useState(false);
     const [editingRoom, setEditingRoom] = useState<RoomType | null>(null);
@@ -90,6 +92,7 @@ export const useRoomTypes = () => {
                 capacity: newCapacity,
                 roomSizeValue: newRoomSizeValue,
                 roomSizeUnit: newRoomSizeUnit,
+                roomCount: newRoomCount,
                 createdAt: new Date().toISOString()
             });
             resetForm();
@@ -120,6 +123,7 @@ export const useRoomTypes = () => {
                 capacity: newCapacity,
                 roomSizeValue: newRoomSizeValue,
                 roomSizeUnit: newRoomSizeUnit,
+                roomCount: newRoomCount,
                 updatedAt: new Date().toISOString()
             });
             resetForm();
@@ -144,6 +148,7 @@ export const useRoomTypes = () => {
         setNewCapacity(2);
         setNewRoomSizeValue(0);
         setNewRoomSizeUnit("m2");
+        setNewRoomCount(1);
     };
 
     const startEditing = (room: RoomType) => {
@@ -159,6 +164,7 @@ export const useRoomTypes = () => {
         setNewCapacity(room.capacity || 2);
         setNewRoomSizeValue(room.roomSizeValue || 0);
         setNewRoomSizeUnit(room.roomSizeUnit || "m2");
+        setNewRoomCount(room.roomCount || 1);
 
         setView('stepper');
         setCurrentStep(1);
@@ -231,6 +237,8 @@ export const useRoomTypes = () => {
         setNewRoomSizeValue,
         newRoomSizeUnit,
         setNewRoomSizeUnit,
+        newRoomCount,
+        setNewRoomCount,
         saving,
         editingRoom,
         handleAdd,

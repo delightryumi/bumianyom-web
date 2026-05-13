@@ -1,0 +1,496 @@
+/* Root Variables for a Modern Nature Palette */
+:root {
+    --invoice-sage: #5f6b53;
+    --invoice-sage-light: #f1f3ee;
+    --invoice-sage-accent: #8fa382;
+    --invoice-pure-white: #ffffff;
+    --invoice-off-white: #fafafa;
+    --invoice-black: #111111;
+    --invoice-gray-dark: #374151;
+    --invoice-gray-muted: #6b7280;
+    --invoice-gray-light: #9ca3af;
+    --invoice-border: #e5e7eb;
+    --invoice-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --invoice-shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+    --invoice-scale: 0.8; /* Scale to fit full A4 on screen */
+}
+
+/* Layout Wrappers */
+.invoice-container {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 2rem 4rem 2rem;
+    align-items: start;
+    background: var(--invoice-off-white);
+}
+
+.invoice-preview-container {
+    width: 100%;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+.invoice-scroll-wrapper {
+    max-height: none; /* allow full height for scaling */
+    overflow: visible;
+}
+
+/* A4 Paper with scaling */
+.invoice-paper {
+    width: 210mm;
+    height: 297mm;
+    box-sizing: border-box;
+    padding: 20mm 15mm;
+    background: var(--invoice-pure-white);
+    box-shadow: 0 20px 30px rgba(0,0,0,0.08);
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--invoice-black);
+    line-height: 1.5;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    transform: scale(var(--invoice-scale));
+    transform-origin: top left;
+}
+
+.invoice-accent-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6mm;
+    background: var(--invoice-sage);
+}
+
+/* Header */
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30mm;
+}
+
+.invoice-logo {
+    max-height: 120px;
+    width: auto;
+    display: block;
+    margin-bottom: 8mm;
+}
+
+.brand-title {
+    font-size: 28pt;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+    color: var(--invoice-black);
+    margin: 0;
+}
+
+.invoice-subtitle {
+    font-size: 12pt;
+    font-weight: 500;
+    color: var(--invoice-gray-dark);
+    margin-top: 4pt;
+    letter-spacing: 0.05em;
+}
+
+/* Detail Box (Metadata) */
+.detail-box {
+    display: flex;
+    gap: 0.8rem;
+    background: var(--invoice-off-white);
+    padding: 1rem;
+    border: 1px solid var(--invoice-sage-light);
+    border-radius: 8px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding-bottom: 4px;
+}
+
+.detail-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--invoice-gray-muted);
+    letter-spacing: 0.15em;
+}
+
+.detail-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--invoice-black);
+    overflow-wrap: break-word;
+    max-width: 120mm;
+    text-align: right;
+}
+
+/* Guest / Resort Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    margin-bottom: 30mm;
+}
+
+.info-card {
+    padding-left: 1.5rem;
+    border-left: 2px solid var(--invoice-sage);
+}
+
+.info-card h4 {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--invoice-sage-accent);
+    margin-bottom: 12px;
+}
+
+/* Service Table */
+.invoice-table-modern {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+}
+
+.invoice-table-modern th {
+    text-align: left;
+    padding: 12px 0;
+    font-size: 10px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--invoice-sage);
+    border-bottom: 2px solid var(--invoice-sage-light);
+}
+
+.invoice-table-modern td {
+    padding: 16px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--invoice-gray-dark);
+    border-bottom: 1px solid var(--invoice-sage-light);
+    vertical-align: top;
+    overflow-wrap: break-word;
+}
+
+.invoice-col-desc { width: auto; }
+.invoice-col-qty { width: 20mm; text-align: center; }
+.invoice-col-unit { width: 40mm; text-align: right; }
+.invoice-col-total { width: 45mm; text-align: right; }
+
+/* Summary Block */
+.summary-block {
+    width: 70mm;
+    margin-left: auto;
+    font-size: 10pt;
+    color: var(--invoice-gray-muted);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.summary-total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 2px solid var(--invoice-black);
+    font-size: 12pt;
+    font-weight: 950;
+    color: var(--invoice-sage);
+    letter-spacing: -0.02em;
+}
+
+/* Footer (Signature & Thank‑you) */
+.footer-section {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 2px solid var(--invoice-sage-light);
+    padding-top: 12mm;
+}
+
+.thank-you {
+    font-size: 11pt;
+    font-style: italic;
+    color: var(--invoice-gray-dark);
+    margin-bottom: 12mm;
+}
+
+.signatory {
+    text-align: left;
+}
+
+.signatory p {
+    margin: 0;
+    font-size: 10pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--invoice-gray-muted);
+}
+
+.sig-line {
+    width: 60mm;
+    border-bottom: 1px solid var(--invoice-black);
+    margin: 8mm 0;
+}
+
+.branding-footer {
+    text-align: right;
+    font-size: 9pt;
+    color: var(--invoice-gray-muted);
+    line-height: 1.6;
+}
+
+/* Form Side Styling */
+.invoice-form-card {
+    background: var(--invoice-pure-white);
+    border-radius: 12px;
+    border: 1px solid var(--invoice-border);
+    padding: 1.5rem;
+    box-shadow: var(--invoice-shadow-md);
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+}
+
+.form-section {
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--invoice-sage);
+    border-bottom: 2px solid var(--invoice-sage-light);
+    padding-bottom: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group-custom label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--invoice-gray-muted);
+    letter-spacing: 0.02em;
+}
+
+.form-group-custom input,
+.form-group-custom textarea {
+    padding: 12px 16px;
+    border: 1px solid var(--invoice-border);
+    border-radius: 8px;
+    background: var(--invoice-off-white);
+    color: var(--invoice-black);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.form-group-custom input:focus,
+.form-group-custom textarea:focus {
+    outline: none;
+    border-color: var(--invoice-sage);
+    background: var(--invoice-pure-white);
+    box-shadow: 0 0 0 4px var(--invoice-sage-light);
+}
+
+/* Item Row Styling */
+.item-row {
+    background: var(--invoice-off-white);
+    padding: 1rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.item-row:hover {
+    border-color: var(--invoice-sage-light);
+    background: var(--invoice-pure-white);
+    box-shadow: var(--invoice-shadow-sm);
+}
+
+.item-input-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--invoice-gray-light);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.item-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--invoice-border);
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--invoice-black);
+}
+
+.item-input:focus {
+    outline: none;
+    border-bottom-color: var(--invoice-sage);
+}
+
+/* Custom Scrollbar for Form Card */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--invoice-border);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--invoice-gray-light);
+}
+
+/* Action Buttons (Download/Print) */
+.btn-invoice-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1.5px solid var(--invoice-sage);
+    background: transparent;
+    color: var(--invoice-sage);
+    letter-spacing: -0.01em;
+}
+
+.btn-invoice-action:hover {
+    background: var(--invoice-sage-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(95, 107, 83, 0.15);
+}
+
+.btn-invoice-action.primary-peach {
+    background: #ffd8a6;
+    color: #111;
+    border-color: #ffd8a6;
+}
+
+.btn-invoice-action.primary-peach:hover {
+    background: #ffcc8a;
+    box-shadow: 0 4px 12px rgba(255, 216, 166, 0.4);
+}
+
+.btn-invoice-action.primary {
+    background: var(--invoice-black);
+    color: var(--invoice-pure-white);
+    border-color: var(--invoice-black);
+}
+
+.btn-invoice-action.primary:hover {
+    background: #000000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Print Overrides */
+@media print {
+    /* Hide layout elements explicitly */
+    .sidebar, 
+    .dashboard-top-bar, 
+    .dashboard-footer-clean, 
+    .no-print, 
+    .btn-invoice-action,
+    .invoice-form-card,
+    .dashboard-header {
+        display: none !important;
+    }
+
+    /* Reset layout for print */
+    .dashboard-wrapper {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .main-scroll-container {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .section-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Target the invoice paper specifically */
+    #invoice-to-print {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 20mm 15mm !important;
+        background: white !important;
+        box-shadow: none !important;
+        transform: none !important;
+        z-index: 9999 !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure all parents of the invoice are visible */
+    .invoice-container,
+    .invoice-preview-container,
+    .invoice-scroll-wrapper {
+        display: block !important;
+        visibility: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* Hide background elements */
+    body {
+        background: white !important;
+    }
+}

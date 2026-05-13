@@ -1,33 +1,23 @@
 "use client";
 
 import React, { useState, useLayoutEffect, useRef } from "react";
-import { Sidebar, SectionType } from "./Sidebar";
-import { LogoSection } from "../sections/logo/LogoSection";
-import { HeroSection } from "../sections/hero/HeroSection";
-import { RoomTypeSection } from "../sections/rooms/RoomTypeSection";
-import { AboutUsSection } from "../sections/about/AboutUsSection";
-import { GallerySection } from "../sections/gallery/GallerySection";
-import { AttractionsSection } from "../sections/attractions/AttractionsSection";
-import { FooterSection } from "../sections/footer/FooterSection";
-import { useFooter } from "../sections/footer/useFooter";
-import { SEOSection } from "../sections/seo/SEOSection";
-import { OverviewSection } from "../sections/overview/OverviewSection";
-import { PromoSection } from "../sections/promo/PromoSection";
-import { PackagesSection } from "../sections/packages/PackagesSection";
+import { Sidebar } from "./Sidebar";
 import { StatusWidget } from "./StatusWidget";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink } from "lucide-react";
+import { useFooter } from "../sections/footer/useFooter";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { LoginSection } from "@/components/sections/login/LoginSection";
 import gsap from "gsap";
 import "./layout.css";
 
-// We will import sections here as we build them
-// For now, we'll use placeholders
-
-export const DashboardLayout = () => {
-    const [activeSection, setActiveSection] = useState<SectionType>("overview");
-    const [isCollapsed, setIsCollapsed] = useState(true); // Default to collapsed for aesthetics and mobile
+export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+    const { user, loading } = useAuth();
+    const [isCollapsed, setIsCollapsed] = useState(true);
     const { poweredByText, poweredByLink } = useFooter();
     const containerRef = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
 
     useLayoutEffect(() => {
         if (!containerRef.current) return;
@@ -50,51 +40,23 @@ export const DashboardLayout = () => {
                 clearProps: "all"
             }
         );
-    }, [activeSection]);
+    }, [pathname]);
 
-    const renderSection = () => {
-        switch (activeSection) {
-            case "overview":
-                return <OverviewSection onNavigate={setActiveSection} />;
-            case "logo":
-                return <LogoSection />;
-            case "hero":
-                return <HeroSection />;
-            case "room-type":
-                return <RoomTypeSection />;
-            case "about":
-                return <AboutUsSection />;
-            case "gallery":
-                return <GallerySection />;
-            case "attractions":
-                return <AttractionsSection />;
-            case "promo":
-                return <PromoSection />;
-            case "packages":
-                return <PackagesSection />;
-            case "footer":
-                return <FooterSection />;
-            case "seo":
-                return <SEOSection />;
-            default:
-                return (
-                    <div className="fade-in text-center py-20">
-                        <h2 className="text-xl font-semibold text-gray-400">Section "{activeSection}" is coming soon.</h2>
-                        <p className="text-gray-400 mt-2">I am building this modularly as requested.</p>
-                    </div>
-                );
-        }
-    };
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-broken-white">
+                <div className="text-sage font-semibold animate-pulse">Loading...</div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <LoginSection />;
+    }
 
     return (
         <div className={`dashboard-wrapper ${isCollapsed ? "collapsed" : ""} ${!isCollapsed ? "mobile-open" : ""}`}>
             <Sidebar
-                activeSection={activeSection}
-                setActiveSection={(s: SectionType) => {
-                    setActiveSection(s);
-                    // Close on mobile when navigation happens
-                    if (window.innerWidth <= 1024) setIsCollapsed(true);
-                }}
                 isCollapsed={isCollapsed}
                 setIsCollapsed={setIsCollapsed}
             />
@@ -113,7 +75,7 @@ export const DashboardLayout = () => {
                 <div className="main-scroll-container">
                     <AnimatePresence mode="wait">
                         <motion.div
-                            key={activeSection}
+                            key={pathname}
                             ref={containerRef}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -121,7 +83,7 @@ export const DashboardLayout = () => {
                             transition={{ duration: 0.3 }}
                             className="section-wrapper"
                         >
-                            {renderSection()}
+                            {children}
                         </motion.div>
                     </AnimatePresence>
 
