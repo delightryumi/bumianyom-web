@@ -26,12 +26,21 @@ import {
     Hammer,
     UserCheck,
     LogOut,
+    Activity,
     Clock,
     AlertCircle,
     Coffee,
     Download,
-    FileText
+    FileText,
+    LayoutDashboard,
+    PieChart as LucidePie, 
+    BarChart as LucideBar
 } from "lucide-react";
+import { 
+  ResponsiveContainer, PieChart, Pie, Cell, 
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  CartesianGrid, AreaChart, Area
+} from 'recharts';
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -59,11 +68,12 @@ const rise = {
 
 export const ForecastSection: React.FC = () => {
     const router = useRouter();
-    const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
+    const [viewMode, setViewMode] = useState<"daily" | "monthly" | "yearly">("daily");
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
     const [isOtherRevenueOpen, setIsOtherRevenueOpen] = useState(false);
+    const [displayMode, setDisplayMode] = useState<"cards" | "charts">("cards");
     const stats = useForecast(viewMode, selectedDate);
 
     const formatCurrency = (val: number) => {
@@ -78,36 +88,39 @@ export const ForecastSection: React.FC = () => {
         setIsEditing(true);
     };
 
-    const handleDelete = async (booking: any) => {
-        if (!window.confirm(`Delete entry for "${booking.guestName}"?`)) return;
+    const [bookingToDelete, setBookingToDelete] = useState<any>(null);
+
+    const handleDeleteClick = (booking: any) => {
+        setBookingToDelete(booking);
+    };
+
+    const executeDelete = async () => {
+        if (!bookingToDelete) return;
 
         try {
-            const dateStr = new Date(booking.timestamp).toISOString().split('T')[0];
-            const hotelId = "bumi-anyom-resort";
-            const docId = `${hotelId}_${dateStr}`;
-            const docRef = doc(db, "daily_revenue", docId);
-
+            const docRef = doc(db, "daily_revenue", bookingToDelete._docId);
             const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
-                const updatedEntries = entries.filter((e: any) => e.timestamp !== booking.timestamp);
+                const updatedEntries = entries.filter((e: any) => e.timestamp !== bookingToDelete.timestamp);
                 await updateDoc(docRef, { entries: updatedEntries });
-                alert("Deleted.");
+                toast.success("Transaction deleted successfully");
             }
         } catch (error) {
             console.error(error);
-            alert("Failed.");
+            toast.error("Failed to delete transaction");
+        } finally {
+            setBookingToDelete(null);
+            if (onDateChange) onDateChange(selectedDate); // Trigger refresh if available
         }
     };
 
     const handleStatusUpdate = async (booking: any, field: "guestStatus" | "roomStatus", value: string) => {
         try {
-            const dateStr = new Date(booking.timestamp).toISOString().split('T')[0];
-            const hotelId = "bumi-anyom-resort";
-            const docId = `${hotelId}_${dateStr}`;
-            const docRef = doc(db, "daily_revenue", docId);
-
+            const docRef = doc(db, "daily_revenue", booking._docId);
             const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
                 const updatedEntries = entries.map((e: any) => {
@@ -120,7 +133,7 @@ export const ForecastSection: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to update status:", error);
-            alert("Update failed.");
+            toast.error("Status update failed");
         }
     };
 
@@ -194,7 +207,10 @@ export const ForecastSection: React.FC = () => {
             if (viewMode === "daily") {
                 return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
             }
-            return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            if (viewMode === "monthly") {
+                return date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            }
+            return date.toLocaleDateString('id-ID', { year: 'numeric' });
         } catch {
             return dateStr;
         }
@@ -244,6 +260,16 @@ export const ForecastSection: React.FC = () => {
                         >
                             Monthly
                         </button>
+                        <button
+                            onClick={() => setViewMode("yearly")}
+                            className={`flex items-center justify-center h-10 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap min-w-[140px] ${viewMode === "yearly"
+                                ? "shadow-sm"
+                                : "text-stone-400 hover:text-stone-600 hover:bg-stone-200/50"
+                                }`}
+                            style={viewMode === "yearly" ? { backgroundColor: PEACH, color: RICH_BLACK } : {}}
+                        >
+                            Yearly
+                        </button>
                     </div>
 
                     {/* Date Picker (Custom CSS) */}
@@ -254,14 +280,7 @@ export const ForecastSection: React.FC = () => {
                         formatDisplay={formatDate}
                     />
 
-                    <button
-                        onClick={() => router.push(`/forecast/add?date=${selectedDate}`)}
-                        className="flex items-center justify-center gap-2.5 h-10 min-w-[140px] px-6 rounded-lg text-[13px] font-medium transition-all text-white hover:brightness-110 hover:shadow-md active:scale-95 whitespace-nowrap"
-                        style={{ backgroundColor: SAGE }}
-                    >
-                        <PlusCircle size={15} />
-                        Add Transaction
-                    </button>
+
 
                     {/* Export Dropdown - Desktop */}
                     <div className="flex items-center gap-2 border-l border-stone-200 pl-4 ml-2">
@@ -280,91 +299,292 @@ export const ForecastSection: React.FC = () => {
                             <FileText size={16} />
                         </button>
                     </div>
+                    {/* Display Toggle (Cards vs Charts) */}
+                    <div className="flex p-1 bg-stone-100 rounded-xl border border-stone-200/40 shadow-inner ml-2">
+                        <button
+                            onClick={() => setDisplayMode("cards")}
+                            className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${displayMode === "cards" ? "bg-white shadow-sm text-stone-900" : "text-stone-400 hover:text-stone-600"}`}
+                            title="Card View"
+                        >
+                            <LayoutDashboard size={16} />
+                        </button>
+                        <button
+                            onClick={() => setDisplayMode("charts")}
+                            className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${displayMode === "charts" ? "bg-white shadow-sm text-stone-900" : "text-stone-400 hover:text-stone-600"}`}
+                            title="Analytics View"
+                        >
+                            <TrendingUp size={16} />
+                        </button>
+                    </div>
                 </div>
             </motion.header>
 
-            <motion.section 
-                variants={stagger} 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
-            >
-                <SummaryCard
-                    label="Total Gross Revenue"
-                    icon={<Wallet size={18} />}
-                    accent="#4ade80"
-                    value={stats.totalGrossRevenue}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="Sales (Pay at Hotel)"
-                    icon={<Hotel size={18} />}
-                    accent="#3b82f6"
-                    value={stats.salesPayAtHotel}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="Sales (Pay at Nexura)"
-                    icon={<CreditCard size={18} />}
-                    accent="#8b5cf6"
-                    value={stats.salesPayAtNexura}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="Walk-in Revenue"
-                    icon={<UserPlus size={18} />}
-                    accent="#cc6817ff"
-                    value={stats.walkInRevenue}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="OTA Revenue"
-                    icon={<Globe size={18} />}
-                    accent="#06b6d4"
-                    value={stats.otaRevenue}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="Other Revenue"
-                    icon={<MoreHorizontal size={18} />}
-                    accent="#ec4899"
-                    value={stats.otherRevenue}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                    onClick={() => setIsOtherRevenueOpen(true)}
-                />
-                
-                {/* ─── NEW Performance Cards ─── */}
-                <SummaryCard
-                    label="OCC (Occupancy)"
-                    icon={<Percent size={18} />}
-                    accent="#f59e0b"
-                    prefix=""
-                    suffix="%"
-                    value={stats.occ}
-                    loading={stats.loading}
-                    formatter={(v) => v.toFixed(1)}
-                />
-                <SummaryCard
-                    label="ARR (Avg Room Rate)"
-                    icon={<Coins size={18} />}
-                    accent="#10b981"
-                    value={stats.arr}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-                <SummaryCard
-                    label="RevPar"
-                    icon={<TrendingUp size={18} />}
-                    accent="#6366f1"
-                    value={stats.revPar}
-                    loading={stats.loading}
-                    formatter={formatCurrency}
-                />
-            </motion.section>
+            {/* ─── Main Content: Cards or Charts ─── */}
+            <AnimatePresence mode="wait">
+                {displayMode === "cards" ? (
+                    <motion.section 
+                        key="cards"
+                        variants={stagger}
+                        initial="hidden"
+                        animate="show"
+                        exit={{ opacity: 0, x: -20 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+                    >
+                        <SummaryCard
+                            label="Total Gross Revenue"
+                            icon={<TrendingUp size={18} />}
+                            accent="#4ade80"
+                            value={stats.totalGrossRevenue}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="Sales (Pay at Hotel)"
+                            icon={<Hotel size={18} />}
+                            accent="#3b82f6"
+                            value={stats.salesPayAtHotel}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="Sales (Pay at Nexura)"
+                            icon={<CreditCard size={18} />}
+                            accent="#8b5cf6"
+                            value={stats.salesPayAtNexura}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="Walk-in Revenue"
+                            icon={<UserPlus size={18} />}
+                            accent="#cc6817ff"
+                            value={stats.walkInRevenue}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="OTA Revenue"
+                            icon={<Globe size={18} />}
+                            accent="#06b6d4"
+                            value={stats.otaRevenue}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="Other Revenue"
+                            icon={<MoreHorizontal size={18} />}
+                            accent="#ec4899"
+                            value={stats.otherRevenue}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                            onClick={() => setIsOtherRevenueOpen(true)}
+                        />
+                        
+                        {/* ─── NEW Performance Cards ─── */}
+                        <SummaryCard
+                            label="OCC (Occupancy)"
+                            icon={<Percent size={18} />}
+                            accent="#f59e0b"
+                            prefix=""
+                            suffix="%"
+                            value={stats.occ}
+                            loading={stats.loading}
+                            formatter={(v) => v.toFixed(1)}
+                        />
+                        <SummaryCard
+                            label="ARR (Avg Room Rate)"
+                            icon={<Coins size={18} />}
+                            accent="#10b981"
+                            value={stats.arr}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                        <SummaryCard
+                            label="RevPar"
+                            icon={<TrendingUp size={18} />}
+                            accent="#6366f1"
+                            value={stats.revPar}
+                            loading={stats.loading}
+                            formatter={formatCurrency}
+                        />
+                    </motion.section>
+                ) : (
+                    <motion.section
+                        key="charts"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                    >
+                        {/* Revenue Distribution */}
+                        <div className="bg-white border border-stone-100 rounded-2xl p-8 shadow-xl shadow-stone-200/20">
+                            <h3 className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-8">Revenue Distribution</h3>
+                            <div className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={[
+                                                { name: 'Hotel Collect', value: stats.salesPayAtHotel || 0 },
+                                                { name: 'Nexura Collect', value: stats.salesPayAtNexura || 0 },
+                                                { name: 'Other Income', value: stats.otherRevenue || 0 }
+                                            ]}
+                                            cx="50%" cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={8}
+                                            dataKey="value"
+                                            animationDuration={1500}
+                                        >
+                                            <Cell fill="#ffd8a6" />
+                                            <Cell fill="#788069" />
+                                            <Cell fill="#1A1C14" />
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                            formatter={(value: number) => `Rp ${formatCurrency(value)}`}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36}/>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Source Performance */}
+                        <div className="bg-white border border-stone-100 rounded-2xl p-8 shadow-xl shadow-stone-200/20">
+                            <h3 className="text-sm font-bold text-stone-400 uppercase tracking-widest mb-8">Booking Channel Performance</h3>
+                            <div className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={[
+                                            { name: 'OTA', value: stats.otaRevenue || 0, fill: '#788069' },
+                                            { name: 'Walk-in', value: stats.walkInRevenue || 0, fill: '#ffd8a6' },
+                                            { name: 'Other', value: stats.otherRevenue || 0, fill: '#1A1C14' }
+                                        ]}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#A8A29E' }} />
+                                        <YAxis hide />
+                                        <Tooltip 
+                                            cursor={{ fill: 'transparent' }}
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                            formatter={(value: number) => `Rp ${formatCurrency(value)}`}
+                                        />
+                                        <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={2000} barSize={50} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Performance Trajectory (Full Trend) */}
+                        <div className="lg:col-span-2 bg-white border border-stone-100 rounded-2xl p-8 shadow-xl shadow-stone-200/20">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-sm font-bold text-stone-400 uppercase tracking-widest">
+                                    Performance Trajectory 
+                                    <span className="ml-2 text-[10px] text-stone-300">
+                                        ({viewMode === 'daily' ? 'Days of Month' : viewMode === 'monthly' ? 'Months of Year' : 'Multi-Year Trend'})
+                                    </span>
+                                </h3>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-sage"></div>
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Gross Revenue</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-peach"></div>
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">OCC %</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-[400px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={stats.trendData}>
+                                        <defs>
+                                            <linearGradient id="colorGross" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={SAGE} stopOpacity={0.1}/>
+                                                <stop offset="95%" stopColor={SAGE} stopOpacity={0}/>
+                                            </linearGradient>
+                                            <linearGradient id="colorOcc" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={PEACH} stopOpacity={0.1}/>
+                                                <stop offset="95%" stopColor={PEACH} stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                        <XAxis 
+                                            dataKey="label" 
+                                            axisLine={false} 
+                                            tickLine={false} 
+                                            tick={{ fontSize: 10, fontWeight: 700, fill: '#A8A29E' }} 
+                                        />
+                                        <YAxis yAxisId="left" hide />
+                                        <YAxis yAxisId="right" hide orientation="right" />
+                                        <Tooltip 
+                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                            formatter={(value: any, name: string) => {
+                                                if (name === "gross") return [`Rp ${formatCurrency(value)}`, "Gross Revenue"];
+                                                if (name === "occ") return [`${value.toFixed(1)}%`, "Occupancy"];
+                                                if (name === "arr") return [`Rp ${formatCurrency(value)}`, "ADR"];
+                                                if (name === "revPar") return [`Rp ${formatCurrency(value)}`, "RevPAR"];
+                                                return [value, name];
+                                            }}
+                                        />
+                                        <Area 
+                                            yAxisId="left"
+                                            type="monotone" 
+                                            dataKey="gross" 
+                                            stroke={SAGE} 
+                                            strokeWidth={3} 
+                                            fillOpacity={1} 
+                                            fill="url(#colorGross)" 
+                                            animationDuration={2000} 
+                                        />
+                                        <Area 
+                                            yAxisId="right"
+                                            type="monotone" 
+                                            dataKey="occ" 
+                                            stroke={PEACH} 
+                                            strokeWidth={2} 
+                                            strokeDasharray="5 5"
+                                            fillOpacity={1} 
+                                            fill="url(#colorOcc)" 
+                                            animationDuration={2500} 
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Efficiency Metrics */}
+                        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <SummaryCard
+                                label="Occupancy Rate"
+                                icon={<Percent size={18} />}
+                                accent="#f59e0b"
+                                prefix=""
+                                suffix="%"
+                                value={stats.occ}
+                                loading={stats.loading}
+                                formatter={(v) => v.toFixed(1)}
+                            />
+                            <SummaryCard
+                                label="Average Room Rate"
+                                icon={<Coins size={18} />}
+                                accent="#10b981"
+                                value={stats.arr}
+                                loading={stats.loading}
+                                formatter={formatCurrency}
+                            />
+                            <SummaryCard
+                                label="RevPAR (Yield)"
+                                icon={<Activity size={18} />}
+                                accent="#6366f1"
+                                value={stats.revPar}
+                                loading={stats.loading}
+                                formatter={formatCurrency}
+                            />
+                        </div>
+                    </motion.section>
+                )}
+            </AnimatePresence>
 
             {/* ─── Bottom Section: Conditional by view mode ─── */}
             <AnimatePresence mode="wait">
@@ -401,7 +621,10 @@ export const ForecastSection: React.FC = () => {
                             />
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-stone-100 shadow-lg overflow-hidden">
+                        <div 
+                            style={{ padding: '50px' }}
+                            className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+                        >
 
                             {/* Table */}
                             <div className="overflow-x-auto">
@@ -521,7 +744,7 @@ export const ForecastSection: React.FC = () => {
                                                     </td>
                                                     {/* Aksi */}
                                                     <td className="py-6 px-8 text-center">
-                                                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                        <div className="flex items-center justify-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity duration-200">
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); setSelectedGuest(entry); }}
                                                                 className="p-1.5 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-100 text-stone-400 hover:text-stone-600 transition-colors"
@@ -535,7 +758,7 @@ export const ForecastSection: React.FC = () => {
                                                                 <Pencil size={13} />
                                                             </button>
                                                             <button 
-                                                                onClick={(e) => { e.stopPropagation(); handleDelete(entry); }}
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(entry); }}
                                                                 className="p-1.5 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-100 text-stone-400 hover:text-red-500 transition-colors"
                                                             >
                                                                 <Trash2 size={13} />
@@ -585,7 +808,10 @@ export const ForecastSection: React.FC = () => {
                             </span>
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-stone-100 shadow-lg overflow-hidden">
+                        <div 
+                            style={{ padding: '50px' }}
+                            className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+                        >
                             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {[
                                     { name: "Traveloka", file: "traveloka.png", color: "#00aaf2" },
@@ -715,6 +941,49 @@ export const ForecastSection: React.FC = () => {
                         onClose={() => setIsOtherRevenueOpen(false)}
                         formatCurrency={formatCurrency}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Custom Themed Confirmation Modal */}
+            <AnimatePresence>
+                {bookingToDelete && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[300] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setBookingToDelete(null)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-[24px] p-8 max-w-md w-full shadow-2xl border border-stone-100"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6">
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 className="text-xl font-bold text-stone-900 font-outfit uppercase tracking-tight mb-2">Confirm Deletion</h3>
+                            <p className="text-[11px] text-stone-500 uppercase tracking-widest leading-relaxed mb-8">
+                                Are you sure you want to permanently delete the transaction for <span className="font-bold text-stone-900">{bookingToDelete.guestName || bookingToDelete.incomeCategory}</span>? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setBookingToDelete(null)}
+                                    className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={executeDelete}
+                                    className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </motion.div>

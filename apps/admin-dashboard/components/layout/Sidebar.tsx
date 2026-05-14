@@ -13,7 +13,7 @@ import {
     BarChart2, FileImage, Home, Layout, Coffee,
     Info, Grid, Settings, LogOut, FileText,
     MapPin, Gift, Package, Search, ChevronLeft, Menu,
-    TrendingUp, PieChart
+    TrendingUp, PieChart, Users, ShoppingCart
 } from "lucide-react";
 import { signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -24,7 +24,7 @@ import React, { useEffect, useRef, useState } from "react";
 export type SectionType =
     | "overview" | "logo" | "hero" | "room-type"
     | "about" | "gallery" | "footer"
-    | "attractions" | "promo" | "packages" | "seo" | "invoice" | "forecast" | "pnl";
+    | "attractions" | "promo" | "packages" | "seo" | "invoice" | "forecast" | "pnl" | "users";
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -144,6 +144,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // Get the first path segment as the active section
     const activeSection = pathname.split("/")[1] || "overview";
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [userPermissions, setUserPermissions] = useState<Record<string, boolean> | null>(null);
+    const [isSuperadmin, setIsSuperadmin] = useState(false);
     const mouseY = useMotionValue(Infinity);
 
     useEffect(() => {
@@ -161,9 +163,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
         fetchLogo();
     }, []);
 
-    const navItems: { id: SectionType; label: string; icon: React.ReactNode }[] = [
+    useEffect(() => {
+        const fetchPermissions = async () => {
+            const user = auth.currentUser;
+            if (!user?.email) return;
+
+            try {
+                // 1. Get User Role
+                const userDocId = user.email.replace(/[@.]/g, '_');
+                const userSnap = await getDoc(doc(db, "users_master", userDocId));
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    const role = userData.role;
+                    
+                    if (role === "superadmin") {
+                        setIsSuperadmin(true);
+                        return;
+                    }
+
+                    // 2. Get Role Permissions
+                    const roleId = role.toLowerCase().replace(/\s+/g, '_');
+                    const roleSnap = await getDoc(doc(db, "roles_master", roleId));
+                    if (roleSnap.exists()) {
+                        setUserPermissions(roleSnap.data().permissions || {});
+                    }
+                } else {
+                    // Default to superadmin if not found in master (for initial setup)
+                    setIsSuperadmin(true);
+                }
+            } catch (err) {
+                console.error("Error fetching permissions:", err);
+                setIsSuperadmin(true);
+            }
+        };
+        fetchPermissions();
+    }, []);
+
+    const allNavItems: { id: SectionType; label: string; icon: React.ReactNode }[] = [
         { id: "overview", label: "Overview", icon: <BarChart2 size={18} /> },
-        { id: "forecast", label: "Forecast & POS", icon: <TrendingUp size={18} /> },
+        { id: "forecast", label: "Forecast", icon: <TrendingUp size={18} /> },
+        { id: "pos", label: "POS Terminal", icon: <ShoppingCart size={18} /> },
         { id: "invoice", label: "Create Invoice", icon: <FileText size={18} /> },
         { id: "pnl", label: "PNL Statement", icon: <PieChart size={18} /> },
         { id: "logo", label: "Logo (Light/Dark)", icon: <FileImage size={18} /> },
@@ -176,7 +216,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "promo", label: "Promo Management", icon: <Gift size={18} /> },
         { id: "packages", label: "Custom Packages", icon: <Package size={18} /> },
         { id: "seo", label: "SEO & Metadata", icon: <Search size={18} /> },
+        { id: "users", label: "User Management", icon: <Users size={18} /> },
     ];
+
+    const navItems = isSuperadmin 
+        ? allNavItems 
+        : allNavItems.filter(item => userPermissions?.[item.id] !== false);
+
 
     const handleLogout = () => signOut(auth);
 

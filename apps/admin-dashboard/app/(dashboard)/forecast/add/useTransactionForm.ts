@@ -56,6 +56,12 @@ export const useTransactionForm = () => {
     });
 
     useEffect(() => {
+        if (revenueType === "room" && !(form.channel === "Walk-in" || form.channel === "Nexura Sales")) {
+            setForm(prev => ({ ...prev, paymentMethod: "Pay at Nexura", isSplitBill: false }));
+        }
+    }, [form.channel, revenueType]);
+
+    useEffect(() => {
         const fetchRoomTypes = async () => {
             try {
                 const snap = await getDocs(collection(db, "roomTypes"));
@@ -73,7 +79,7 @@ export const useTransactionForm = () => {
         const isRoom = revenueType === "room";
         const isValid = isRoom 
             ? (form.guestName && form.roomTypeId && form.totalAmount)
-            : (form.incomeType && form.staffName && form.totalAmount);
+            : (form.incomeType && form.totalAmount);
 
         if (!isValid) {
             toast.error("Required fields are missing");
@@ -115,7 +121,9 @@ export const useTransactionForm = () => {
                 type: "other_income",
                 incomeCategory: form.incomeType,
                 note: form.note,
-                staffName: form.staffName,
+                staffName: form.staffName || "System", // Fallback if empty
+                checkInDate: form.checkIn, // Required for date mapping
+                checkOutDate: form.checkIn, // Same day for other income
                 amount: Number(form.totalAmount),
                 paidAmount1: Number(form.paidAmount1),
                 paymentStatus: form.paymentMethod,
@@ -127,9 +135,15 @@ export const useTransactionForm = () => {
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
-                await updateDoc(docRef, { entries: arrayUnion(transactionData) });
+                await updateDoc(docRef, { 
+                    entries: arrayUnion(transactionData),
+                    date: dateStr // Ensure date field exists at root for querying
+                });
             } else {
-                await setDoc(docRef, { entries: [transactionData] });
+                await setDoc(docRef, { 
+                    entries: [transactionData],
+                    date: dateStr // Set date field at root for querying
+                });
             }
 
             toast.success("Transaction synchronized successfully");

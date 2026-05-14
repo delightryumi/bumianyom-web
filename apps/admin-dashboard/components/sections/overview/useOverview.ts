@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase"; 
-import { collection, onSnapshot, doc } from "firebase/firestore";
+import { collection, onSnapshot, doc, query, where } from "firebase/firestore";
 
 export interface BookingEntry {
     guestName: string;
@@ -63,41 +63,45 @@ export const useOverview = () => {
 
         const initBookings = async () => {
             try {
-                // Hardcoded: Single Hotel — Bumi Anyom Resort
-                const hotelId = "bumi-anyom-resort";
-
                 const dateStr = getLocalDateString(new Date());
-                const docId = `${hotelId}_${dateStr}`;
                 
-                unsubDaily = onSnapshot(doc(db, "daily_revenue", docId), (docSnap) => {
+                // Query a range to catch overlaps (last 30 days should be enough)
+                const startRange = getLocalDateString(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+                const endRange = getLocalDateString(new Date(Date.now() + 1 * 24 * 60 * 60 * 1000)); // Include today/tomorrow
+                
+                const q = query(
+                    collection(db, "daily_revenue"), 
+                    where("date", ">=", startRange),
+                    where("date", "<=", endRange)
+                );
+
+                unsubDaily = onSnapshot(q, (querySnapshot) => {
                     let checkIn: BookingEntry[] = [];
                     let checkOut: BookingEntry[] = [];
                     let cancels: BookingEntry[] = [];
-                    let entries: any[] = [];
+                    let allAccommodation: any[] = [];
                     
-                    if (docSnap.exists()) {
-                        entries = docSnap.data().entries || [];
-                        
+                    querySnapshot.forEach((docSnap) => {
+                        const entries = (docSnap.data().entries || []).map((e: any) => ({ ...e, _docId: docSnap.id }));
                         entries.forEach((e: any) => {
                             if (e.status === "CANCELLED") {
-                                cancels.push(e);
+                                if (e.checkInDate === dateStr) cancels.push(e);
                             } else if (e.type === "accommodation" || (!e.type && e.guestName)) {
                                 if (e.checkInDate === dateStr) checkIn.push(e);
                                 if (e.checkOutDate === dateStr) checkOut.push(e);
+                                allAccommodation.push(e);
                             }
                         });
-                    }
+                    });
                     
-                    const accommodationOnly = entries.filter((e: any) => e.type === "accommodation" || (!e.type && e.guestName));
-                    const sorted = [...accommodationOnly].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                    const latest = sorted.slice(0, 10);
+                    const latest = [...allAccommodation]
+                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                        .slice(0, 10);
                     
                     setStats(prev => {
-                        const newTotal = prev.roomStatus.total;
-                        const occupied = checkIn.length;
                         return {
                             ...prev,
-                            checkInCount: occupied,
+                            checkInCount: checkIn.length,
                             checkOutCount: checkOut.length,
                             cancelCount: cancels.length,
                             todayCheckIns: checkIn,
@@ -106,8 +110,8 @@ export const useOverview = () => {
                             latestBookings: latest,
                             roomStatus: {
                                 ...prev.roomStatus,
-                                occupied: occupied,
-                                available: Math.max(0, newTotal - occupied)
+                                occupied: checkIn.length,
+                                available: Math.max(0, prev.roomStatus.total - checkIn.length)
                             }
                         };
                     });

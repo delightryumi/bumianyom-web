@@ -14,7 +14,8 @@ import {
     XCircle,
     LayoutDashboard,
     Download,
-    FileText
+    FileText,
+    PlusCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -30,7 +31,9 @@ import "./OverviewStyles.css";
 import { 
     StatCard, 
     GuestDetailModal, 
-    getChannelLogo 
+    getChannelLogo,
+    RoomStatusPicker,
+    GuestStatusPicker
 } from "./OverviewComponents";
 
 interface OverviewSectionProps {
@@ -54,31 +57,55 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
 
     const dash = loading ? "—" : null;
 
-    const handleDelete = async (booking: any) => {
-        if (!window.confirm(`Delete entry for "${booking.guestName}"?`)) return;
+    const [bookingToDelete, setBookingToDelete] = React.useState<any>(null);
+
+    const executeDelete = async () => {
+        if (!bookingToDelete) return;
         
         try {
-            const dateStr = new Date(booking.timestamp).toISOString().split('T')[0];
-            const hotelId = "bumi-anyom-resort";
-            const docId = `${hotelId}_${dateStr}`;
-            const docRef = doc(db, "daily_revenue", docId);
-            
+            const docRef = doc(db, "daily_revenue", bookingToDelete._docId);
             const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
-                const updatedEntries = entries.filter((e: any) => e.timestamp !== booking.timestamp);
+                const updatedEntries = entries.filter((e: any) => e.timestamp !== bookingToDelete.timestamp);
                 await updateDoc(docRef, { entries: updatedEntries });
-                alert("Deleted.");
+                // We don't use native alert anymore. Using toast if available, or just silent success since UI will update.
             }
         } catch (error) {
-            console.error(error);
-            alert("Failed.");
+            console.error("Failed to delete", error);
+        } finally {
+            setBookingToDelete(null);
         }
+    };
+
+    const handleDeleteClick = (booking: any) => {
+        setBookingToDelete(booking);
     };
 
     const handleEdit = (booking: any) => {
         setSelectedGuest(booking);
         setIsEditing(true);
+    };
+
+    const handleStatusUpdate = async (booking: any, field: "guestStatus" | "roomStatus", value: string) => {
+        try {
+            const docRef = doc(db, "daily_revenue", booking._docId);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const entries = docSnap.data().entries || [];
+                const updatedEntries = entries.map((e: any) => {
+                    if (e.timestamp === booking.timestamp) {
+                        return { ...e, [field]: value };
+                    }
+                    return e;
+                });
+                await updateDoc(docRef, { entries: updatedEntries });
+            }
+        } catch (error) {
+            console.error("Failed to update status:", error);
+        }
     };
 
     // ── Export Logic ──
@@ -153,20 +180,31 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button 
-                        onClick={handleExportExcel}
-                        className="h-10 w-10 flex items-center justify-center rounded-lg bg-stone-50 border border-stone-100 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
-                        title="Export to Excel"
+                    <button
+                        onClick={() => router.push(`/forecast/add?date=${new Date().toISOString().split('T')[0]}`)}
+                        className="h-11 w-11 flex items-center justify-center rounded-xl text-white transition-all hover:brightness-110 hover:shadow-md active:scale-95 shadow-sm"
+                        style={{ backgroundColor: SAGE }}
+                        title="Add Transaction"
                     >
-                        <Download size={16} />
+                        <PlusCircle size={18} />
                     </button>
-                    <button 
-                        onClick={handleExportPDF}
-                        className="h-10 w-10 flex items-center justify-center rounded-lg bg-stone-50 border border-stone-100 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
-                        title="Export to PDF"
-                    >
-                        <FileText size={16} />
-                    </button>
+
+                    <div className="flex items-center gap-2 border-l border-stone-200 pl-4 ml-1">
+                        <button 
+                            onClick={handleExportExcel}
+                            className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+                            title="Export to Excel"
+                        >
+                            <Download size={18} />
+                        </button>
+                        <button 
+                            onClick={handleExportPDF}
+                            className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                            title="Export to PDF"
+                        >
+                            <FileText size={18} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -209,7 +247,10 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
             <section className="mt-20">
                 <div className="grid grid-cols-1 gap-12 items-start">
                     {/* Audit Ledger Card */}
-                    <section className="bento-glass rounded-none overflow-hidden">
+                    <section 
+                        style={{ padding: '50px' }}
+                        className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+                    >
                         <div className="p-8 border-b border-stone-50 flex justify-between items-center">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 bg-sage text-white flex items-center justify-center rounded-xl">
@@ -249,7 +290,13 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
                                         </td>
                                         <td className="py-6 px-8 max-w-[200px]">
                                             <p className="text-[11px] font-medium text-stone-800 uppercase font-outfit truncate">{b.roomType ? `${b.roomType} ${b.roomNumber ? `(${b.roomNumber})` : ''}` : '---'}</p>
-                                            <p className="text-[9px] font-bold text-stone-400 italic truncate mt-1">{b.note || 'No internal remarks'}</p>
+                                            <p className="text-[9px] font-bold text-stone-400 italic truncate mt-1 mb-2">{b.note || 'No internal remarks'}</p>
+                                            {b.type === 'accommodation' && (
+                                                <RoomStatusPicker 
+                                                    current={b.roomStatus || 'dirty'} 
+                                                    onChange={(val) => handleStatusUpdate(b, 'roomStatus', val)} 
+                                                />
+                                            )}
                                         </td>
                                         <td className="py-6 px-8">
                                             <div className="flex justify-center items-center opacity-80 group-hover:opacity-100 transition-opacity">
@@ -261,7 +308,7 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
                                             <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{b.paymentStatus || 'Settled'}</p>
                                         </td>
                                         <td className="py-6 px-8">
-                                            <div className="flex justify-center">
+                                            <div className="flex flex-col items-center gap-2">
                                                 {(() => {
                                                     const statusText = (b.paymentStatus || "").toUpperCase();
                                                     const mainStatus = (b.status || "").toUpperCase();
@@ -278,13 +325,20 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
                                                         </span>
                                                     );
                                                 })()}
+                                                
+                                                {b.type === 'accommodation' && (
+                                                    <GuestStatusPicker 
+                                                        current={b.guestStatus || 'arriving'} 
+                                                        onChange={(val) => handleStatusUpdate(b, 'guestStatus', val)}
+                                                    />
+                                                )}
                                             </div>
                                         </td>
                                         <td className="py-6 px-8">
                                             <div className="flex justify-center items-center gap-2">
                                                 <button onClick={(e) => { e.stopPropagation(); setSelectedGuest(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-900 hover:bg-white transition-all"><Eye size={14} /></button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleEdit(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-blue-500 hover:bg-white transition-all"><Pencil size={14} /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-white transition-all"><Trash2 size={14} /></button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-white transition-all"><Trash2 size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -304,6 +358,47 @@ export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) 
                         isEditing={isEditing}
                         onClose={() => { setSelectedGuest(null); setIsEditing(false); }} 
                     />
+                )}
+
+                {/* Custom Themed Confirmation Modal */}
+                {bookingToDelete && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[300] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setBookingToDelete(null)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-[24px] p-8 max-w-md w-full shadow-2xl border border-stone-100"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6">
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 className="text-xl font-bold text-stone-900 font-outfit uppercase tracking-tight mb-2">Confirm Deletion</h3>
+                            <p className="text-[11px] text-stone-500 uppercase tracking-widest leading-relaxed mb-8">
+                                Are you sure you want to permanently delete the transaction for <span className="font-bold text-stone-900">{bookingToDelete.guestName || bookingToDelete.incomeCategory}</span>? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setBookingToDelete(null)}
+                                    className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={executeDelete}
+                                    className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

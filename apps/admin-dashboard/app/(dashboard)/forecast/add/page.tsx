@@ -182,42 +182,39 @@ function AddTransactionContent() {
                                                     </div>
                                                 )}
 
-                                                <div className="space-y-12 pt-12 border-t border-stone-50">
-                                                    <div className="flex justify-between items-center text-[12px] font-bold text-stone-300 uppercase tracking-[0.4em] mb-6">
-                                                        <span>Item Description</span>
-                                                        <span>Amount</span>
+                                                <div className="space-y-6">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-[13px] text-stone-500 uppercase tracking-wider">{revenueType === 'room' ? 'Guest Identity' : 'Input Staff'}</p>
+                                                        <p className="text-[13px] font-bold text-stone-900 uppercase tracking-widest truncate max-w-[200px]">{form.guestName || form.staffName || "..."}</p>
                                                     </div>
-                                                    <div className="space-y-8">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-[13px] text-stone-500 uppercase tracking-wider">Channel / Type</p>
+                                                        <p className="text-[13px] font-bold text-stone-900 uppercase tracking-widest">{revenueType === 'room' ? form.channel : form.incomeType}</p>
+                                                    </div>
+                                                    <div className="pt-6 border-t border-stone-50 flex justify-between items-center">
+                                                        <p className="text-[13px] font-bold text-stone-400 uppercase tracking-wider">Gross Total</p>
+                                                        <p className="text-[14px] font-bold text-stone-900 font-mono-jb">{formatCurrency(form.totalAmount)}</p>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-6 pt-10 border-t border-stone-50">
+                                                        <p className="text-[11px] font-bold text-stone-300 uppercase tracking-[0.2em] mb-6">Payment Status</p>
                                                         <div className="flex justify-between items-center">
-                                                            <div className="space-y-2">
-                                                                <p className="text-[14px] font-bold text-stone-700 font-outfit uppercase">
-                                                                    {revenueType === 'room' ? 'Total Revenue' : form.incomeType}
-                                                                </p>
-                                                                <p className="text-[11px] text-stone-400 uppercase tracking-widest">
-                                                                    {revenueType === 'room' ? 'Base Booking Rate' : 'Direct Service Sale'}
-                                                                </p>
-                                                            </div>
-                                                            <p className="text-[14px] font-bold text-stone-900 font-mono-jb">{formatCurrency(form.totalAmount)}</p>
+                                                            <p className="text-[13px] text-stone-500 uppercase tracking-wider">
+                                                                {revenueType === 'room' && form.isSplitBill ? "Payment A" : "Amount Paid"}
+                                                            </p>
+                                                            <p className="text-[13px] text-stone-500 font-mono-jb">{formatCurrency(form.paidAmount1)}</p>
                                                         </div>
-                                                        
-                                                        <div className="space-y-6 pt-10 border-t border-stone-50">
-                                                            <p className="text-[11px] font-bold text-stone-300 uppercase tracking-[0.2em] mb-6">Payment Status</p>
+                                                        {revenueType === 'room' && form.isSplitBill && (
                                                             <div className="flex justify-between items-center">
-                                                                <p className="text-[13px] text-stone-500 uppercase tracking-wider">
-                                                                    {revenueType === 'room' && form.isSplitBill ? "Payment A" : "Amount Paid"}
-                                                                </p>
-                                                                <p className="text-[13px] text-stone-500 font-mono-jb">{formatCurrency(form.paidAmount1)}</p>
+                                                                <p className="text-[11px] text-stone-500 uppercase tracking-wider">Payment B</p>
+                                                                <p className="text-[11px] text-stone-500 font-mono-jb">{formatCurrency(form.paidAmount2)}</p>
                                                             </div>
-                                                            {revenueType === 'room' && form.isSplitBill && (
-                                                                <div className="flex justify-between items-center">
-                                                                    <p className="text-[11px] text-stone-500 uppercase tracking-wider">Payment B</p>
-                                                                    <p className="text-[11px] text-stone-500 font-mono-jb">{formatCurrency(form.paidAmount2)}</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 </div>
+                                            </div>
 
+                                            <div className="p-12">
                                                 <div className="py-10 border-y border-dashed border-stone-200">
                                                     <div className="flex justify-between items-center mb-8">
                                                         <p className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Balance Due</p>
@@ -240,9 +237,9 @@ function AddTransactionContent() {
 
                                     <div className="pt-8">
                                         <button 
-                                            disabled={saving || (form.isSplitBill && balance !== 0) || !form.guestName || !form.totalAmount}
+                                            disabled={saving || (form.isSplitBill && balance !== 0) || !form.totalAmount || (revenueType === 'room' && (!form.guestName || !form.roomTypeId))}
                                             onClick={handleSubmit}
-                                            className="w-full h-16 bg-stone-900 text-white flex items-center justify-center gap-4 text-[13px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-stone-800 active:scale-[0.98] disabled:bg-stone-100 disabled:text-stone-300 group relative overflow-hidden rounded-lg"
+                                            className="w-full h-16 bg-stone-900 text-white flex items-center justify-center gap-4 text-[13px] font-bold uppercase tracking-[0.4em] transition-all hover:bg-stone-800 active:scale-[0.98] disabled:bg-stone-100 disabled:text-stone-300 group relative overflow-hidden rounded-lg shadow-xl shadow-stone-200/50"
                                         >
                                             <div className="absolute inset-0 bg-sage transition-transform duration-500 translate-x-[-101%] group-hover:translate-x-0 -z-0 opacity-10" />
                                             {saving ? (
@@ -259,8 +256,8 @@ function AddTransactionContent() {
                             </div>
 
                             {/* Data Entry Form Column */}
-                            <div className="flex-1 max-w-4xl order-1">
-                                <header className="mb-32">
+                            <div className="flex-1 order-1">
+                                <header className="mb-24">
                                     <div className="flex items-center gap-3 text-sage mb-4">
                                         <button onClick={() => setStep("type")} className="hover:text-stone-900 transition-colors flex items-center gap-2">
                                             <ArrowLeft size={14} />
@@ -272,12 +269,12 @@ function AddTransactionContent() {
                                     </h1>
                                 </header>
 
-                                <div className="space-y-32">
+                                <div className="space-y-24">
                                     {revenueType === 'room' ? (
                                         <>
                                             <section>
                                                 <SectionTitle number="01" label="Guest Information" />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                                                     <div className="md:col-span-2">
                                                         <NexuraInput label="Full Name" value={form.guestName} onChange={(v: string) => updateForm("guestName", v)} />
                                                     </div>
@@ -288,7 +285,7 @@ function AddTransactionContent() {
 
                                             <section>
                                                 <SectionTitle number="02" label="Stay Details" />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                                                     <div className="space-y-3">
                                                         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Room Category</label>
                                                         <div className="relative group luxury-input bg-white transition-all rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-stone-100/50 focus-within:border-sage focus-within:shadow-md">
@@ -313,7 +310,7 @@ function AddTransactionContent() {
 
                                             <section>
                                                 <SectionTitle number="03" label="Additional Info" />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                                                     <div className="md:col-span-2">
                                                         <NexuraInput label="Staff In-Charge" value={form.staffName} onChange={(v: string) => updateForm("staffName", v)} />
                                                     </div>
@@ -335,7 +332,7 @@ function AddTransactionContent() {
                                     ) : (
                                         <section>
                                             <SectionTitle number="01" label="Income Source" />
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                                                 <div className="space-y-3">
                                                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Income Category</label>
                                                     <div className="relative group luxury-input bg-white transition-all rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-stone-100/50 focus-within:border-sage focus-within:shadow-md">
@@ -380,6 +377,9 @@ function AddTransactionContent() {
                                         <div className="space-y-12">
                                             <NexuraInput label="Total Amount (IDR)" type="number" value={form.totalAmount} onChange={(v: string) => updateForm("totalAmount", v)} isAmount />
 
+                                             {/* Split Payment - Only for local sales */}
+                                             {(revenueType !== 'room' || (form.channel === "Walk-in" || form.channel === "Nexura Sales")) && (
+
                                             <div className="flex items-center justify-between p-6 bg-stone-50/50 rounded-xl shadow-sm border border-stone-50">
                                                 <div className="flex items-center gap-5">
                                                     <div className="w-10 h-10 bg-white border border-stone-200 flex items-center justify-center text-stone-400">
@@ -394,8 +394,9 @@ function AddTransactionContent() {
                                                     <div className={`absolute top-1 w-4 h-4 bg-white transition-all duration-300 rounded-full ${form.isSplitBill ? 'left-7' : 'left-1'}`} />
                                                 </button>
                                             </div>
+                                             )}
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12">
                                                 <NexuraInput label={form.isSplitBill ? "Payment A" : "Amount Paid"} type="number" value={form.paidAmount1} onChange={(v: string) => updateForm("paidAmount1", v)} isAmount />
                                                 {form.isSplitBill && (
                                                     <NexuraInput label="Payment B" type="number" value={form.paidAmount2} onChange={(v: string) => updateForm("paidAmount2", v)} isAmount />
@@ -403,16 +404,25 @@ function AddTransactionContent() {
                                             </div>
 
                                             <div className="space-y-4">
-                                                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Payment Method</label>
-                                                <div className="flex gap-1 p-1 bg-stone-100/50 border border-stone-50 rounded-xl">
-                                                    <button onClick={() => updateForm("paymentMethod", "Pay at Hotel")} className={`flex-1 h-12 text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 rounded-lg ${form.paymentMethod === "Pay at Hotel" ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}>
-                                                        <Home size={14} /> Pay at Hotel
-                                                    </button>
-                                                    <button onClick={() => updateForm("paymentMethod", "Pay at Nexura")} className={`flex-1 h-12 text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 rounded-lg ${form.paymentMethod === "Pay at Nexura" ? 'bg-sage text-white shadow-lg shadow-sage/20' : 'text-stone-400 hover:text-stone-600'}`}>
-                                                        <Sparkles size={14} /> Pay at Nexura
-                                                    </button>
-                                                </div>
-                                            </div>
+                                                 <div className="flex items-center justify-between">
+                                                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Payment Method</label>
+                                                     {revenueType === "room" && !(form.channel === "Walk-in" || form.channel === "Nexura Sales") && (
+                                                         <span className="text-[8px] font-bold text-stone-300 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded border border-stone-100">Locked for OTA/Engine</span>
+                                                     )}
+                                                 </div>
+                                                 <div className="flex gap-1 p-1 bg-stone-100/50 border border-stone-50 rounded-xl">
+                                                     <button 
+                                                         onClick={() => updateForm("paymentMethod", "Pay at Hotel")} 
+                                                         disabled={revenueType === "room" && !(form.channel === "Walk-in" || form.channel === "Nexura Sales")}
+                                                         className={`flex-1 h-12 text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 rounded-lg ${form.paymentMethod === "Pay at Hotel" ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'} ${revenueType === "room" && !(form.channel === "Walk-in" || form.channel === "Nexura Sales") ? 'opacity-20 cursor-not-allowed grayscale' : ''}`}
+                                                     >
+                                                         <Home size={14} /> Pay at Hotel
+                                                     </button>
+                                                     <button onClick={() => updateForm("paymentMethod", "Pay at Nexura")} className={`flex-1 h-12 text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 rounded-lg ${form.paymentMethod === "Pay at Nexura" ? 'bg-sage text-white shadow-lg shadow-sage/20' : 'text-stone-400 hover:text-stone-600'}`}>
+                                                         <Sparkles size={14} /> Pay at Nexura
+                                                     </button>
+                                                 </div>
+                                             </div>
                                         </div>
                                     </section>
                                 </div>

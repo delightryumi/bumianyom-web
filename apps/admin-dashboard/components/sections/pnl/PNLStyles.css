@@ -1,0 +1,44 @@
+/* PNL Section - Nexura Audit Aesthetic (Matching Forecast) */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+    --sage: #788069;
+    --peach: #ffd8a6;
+    --rich-black: #1A1C14;
+    --stone-bg: #fafaf9;
+}
+
+.font-instrument { font-family: 'Instrument Sans', sans-serif; }
+.font-mono-jb { font-family: 'JetBrains Mono', monospace; }
+
+/* Scrollbar matches forecast drawer */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e7e5e4;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #d6d3d1;
+}
+
+/* Animations matching forecast rise */
+@keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise {
+    animation: rise 0.4s ease-out forwards;
+}
+
+/* Peach Date Picker Customization */
+.peach-input::-webkit-calendar-picker-indicator {
+    filter: invert(47%) sepia(9%) saturate(495%) hue-rotate(42deg) brightness(92%) contrast(88%);
+    cursor: pointer;
+}

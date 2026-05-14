@@ -79,6 +79,12 @@ export const AddTransactionModal = ({
     });
 
     useEffect(() => {
+        if (!(form.channel === "Walk-in" || form.channel === "Nexura Sales")) {
+            setForm(prev => ({ ...prev, paymentMethod: "Pay at Nexura" }));
+        }
+    }, [form.channel]);
+
+    useEffect(() => {
         const fetchRoomTypes = async () => {
             try {
                 const snap = await getDocs(collection(db, "roomTypes"));
@@ -138,11 +144,13 @@ export const AddTransactionModal = ({
 
             if (docSnap.exists()) {
                 await updateDoc(docRef, {
-                    entries: arrayUnion(transactionData)
+                    entries: arrayUnion(transactionData),
+                    date: dateStr
                 });
             } else {
                 await setDoc(docRef, {
-                    entries: [transactionData]
+                    entries: [transactionData],
+                    date: dateStr
                 });
             }
 
@@ -221,7 +229,7 @@ export const AddTransactionModal = ({
                         </div>
 
                         {/* Scrollable Form Body */}
-                        <div className="flex-1 overflow-y-auto pl-28 pr-16 py-10 space-y-16 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto px-20 py-16 space-y-20 custom-scrollbar">
                             {step === "type" ? (
                                 <div className="grid grid-cols-1 gap-6">
                                     <TypeCard 
@@ -387,15 +395,21 @@ export const AddTransactionModal = ({
 
                                                 {/* Settlement Method Selector: Added pb-20 for safe distance */}
                                                 <div className="pt-10 pb-20">
-                                                    <span className="text-[9px] font-medium uppercase tracking-[0.2em] ml-0.5 mb-5 block" style={{ color: SAGE }}>Settlement Method Selection</span>
+                                                    <div className="flex items-center justify-between mb-5">
+                                                        <span className="text-[9px] font-medium uppercase tracking-[0.2em] ml-0.5" style={{ color: SAGE }}>Settlement Method Selection</span>
+                                                        {!(form.channel === "Walk-in" || form.channel === "Nexura Sales") && (
+                                                            <span className="text-[8px] font-bold text-stone-300 uppercase tracking-widest bg-stone-50 px-2 py-0.5 rounded border border-stone-100">Locked for OTA/Engine</span>
+                                                        )}
+                                                    </div>
                                                     <div className="flex gap-2 p-2 bg-stone-50 rounded-xl border border-stone-100 shadow-sm">
                                                         <button 
                                                             onClick={() => updateForm("paymentMethod", "Pay at Hotel")}
+                                                            disabled={!(form.channel === "Walk-in" || form.channel === "Nexura Sales")}
                                                             className={`flex-1 h-12 text-[10px] font-medium uppercase tracking-widest transition-all rounded-lg flex items-center justify-center gap-2.5 ${
                                                                 form.paymentMethod === "Pay at Hotel" 
                                                                 ? 'bg-stone-900 text-white shadow-lg' 
                                                                 : 'text-stone-400 hover:text-stone-600'
-                                                            }`}
+                                                            } ${!(form.channel === "Walk-in" || form.channel === "Nexura Sales") ? 'opacity-20 cursor-not-allowed grayscale' : ''}`}
                                                         >
                                                             <Home size={14} />
                                                             Pay at Hotel

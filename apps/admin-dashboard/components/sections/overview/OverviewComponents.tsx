@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
     Eye, 
     Pencil, 
@@ -15,10 +15,17 @@ import {
     User,
     CreditCard,
     Home,
-    MessageSquare
+    MessageSquare,
+    Sparkles,
+    Droplets,
+    Hammer,
+    Clock,
+    UserCheck,
+    LogOut,
+    AlertCircle
 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, getDoc, collection, getDocs } from "firebase/firestore";
+import { doc, updateDoc, getDoc, collection, getDocs, setDoc } from "firebase/firestore";
 
 const CHANNELS = [
     { name: "Traveloka", logo: "/channels/traveloka.png" },
@@ -53,7 +60,8 @@ export function StatCard({ icon, label, count, accent, items = [], onItemClick }
     return (
         <motion.div 
             whileHover={{ y: -2 }}
-            className="bento-glass p-8 rounded-3xl flex flex-col gap-6"
+            style={{ padding: '50px' }}
+            className="bg-white rounded-[24px] border border-stone-100 shadow-xl flex flex-col gap-6"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -112,6 +120,7 @@ import "./FolioAesthetic.css";
 
 export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: { guest: any, isEditing: boolean, onClose: () => void }) {
     const [isEditMode, setIsEditMode] = React.useState(initialEditing);
+    const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
     const [formData, setFormData] = React.useState({
         ...guest,
         totalAmount: guest.totalAmount || guest.amount || 0,
@@ -135,28 +144,86 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
 
     const handleSave = async () => {
         try {
-            const dateStr = new Date(guest.timestamp).toISOString().split('T')[0];
             const hotelId = "bumi-anyom-resort";
-            const docId = `${hotelId}_${dateStr}`;
-            const docRef = doc(db, "daily_revenue", docId);
             
+            // 1. Identify source and destination dates
+            const oldDate = guest.checkInDate || guest.checkIn || new Date(guest.timestamp).toISOString().split('T')[0];
+            const newDate = formData.checkIn;
+            
+            const oldDocId = `${hotelId}_${oldDate}`;
+            const newDocId = `${hotelId}_${newDate}`;
+            
+            const updatedEntry = {
+                ...guest,
+                ...formData,
+                checkInDate: newDate,
+                checkOutDate: formData.checkOut,
+                amount: formData.isSplitBill ? (Number(formData.paidAmount1) + Number(formData.paidAmount2)) : Number(formData.paidAmount1),
+            };
+
+            // 2. Handle Document Migration if date changed
+            if (oldDocId !== newDocId) {
+                // Remove from OLD
+                const oldRef = doc(db, "daily_revenue", oldDocId);
+                const oldSnap = await getDoc(oldRef);
+                if (oldSnap.exists()) {
+                    const oldEntries = oldSnap.data().entries || [];
+                    const filtered = oldEntries.filter((e: any) => e.timestamp !== guest.timestamp);
+                    await updateDoc(oldRef, { entries: filtered });
+                }
+
+                // Add to NEW
+                const newRef = doc(db, "daily_revenue", newDocId);
+                const newSnap = await getDoc(newRef);
+                if (newSnap.exists()) {
+                    const newEntries = newSnap.data().entries || [];
+                    await updateDoc(newRef, { 
+                        entries: [...newEntries, updatedEntry],
+                        date: newDate 
+                    });
+                } else {
+                    await setDoc(newRef, { 
+                        entries: [updatedEntry],
+                        date: newDate 
+                    });
+                }
+            } else {
+                // Just update in CURRENT
+                const docRef = doc(db, "daily_revenue", oldDocId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const entries = docSnap.data().entries || [];
+                    const updatedEntries = entries.map((e: any) => 
+                        e.timestamp === guest.timestamp ? updatedEntry : e
+                    );
+                    await updateDoc(docRef, { 
+                        entries: updatedEntries,
+                        date: oldDate 
+                    });
+                }
+            }
+
+            onClose();
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const executeDelete = async () => {
+        try {
+            const docRef = doc(db, "daily_revenue", guest._docId);
             const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
-                const updatedEntries = entries.map((e: any) => 
-                    e.timestamp === guest.timestamp ? { 
-                        ...e, 
-                        ...formData,
-                        amount: formData.isSplitBill ? (Number(formData.paidAmount1) + Number(formData.paidAmount2)) : Number(formData.paidAmount1),
-                    } : e
-                );
-                await updateDoc(docRef, { entries: updatedEntries });
-                alert("Ledger Synchronized Successfully.");
+                const filtered = entries.filter((e: any) => e.timestamp !== guest.timestamp);
+                await updateDoc(docRef, { entries: filtered });
                 onClose();
             }
         } catch (error) {
-            console.error(error);
-            alert("Sync Failed.");
+            console.error("Action Failed", error);
+        } finally {
+            setShowConfirmDelete(false);
         }
     };
 
@@ -178,7 +245,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header - Institutional Style */}
-                <div className="px-8 py-8 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
+                <div className="px-20 py-10 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3 mb-1">
                             <div className="w-6 h-[1px] bg-sage/30" />
@@ -193,7 +260,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-stone-50/10">
+                <div className="flex-1 overflow-y-auto px-20 py-16 custom-scrollbar bg-stone-50/10">
                     {isEditMode ? (
                         <div className="space-y-16 py-6">
                             {/* Section 01: Identity */}
@@ -400,7 +467,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                 </div>
 
                 {/* Footer - Synchronized with Forecast System */}
-                <div className="px-12 h-24 border-t border-stone-100 flex items-center justify-end gap-4 bg-white">
+                <div className="px-20 h-24 border-t border-stone-100 flex items-center justify-end gap-4 bg-white">
                     {isEditMode ? (
                         <>
                             <button 
@@ -433,17 +500,59 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                     Modify
                                 </button>
                                 <button 
-                                    onClick={onClose} 
-                                    className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white hover:brightness-110 active:scale-95 rounded-lg"
-                                    style={{ backgroundColor: "#788069" }}
+                                    onClick={() => setShowConfirmDelete(true)} 
+                                    className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white bg-red-500 hover:bg-red-600 active:scale-95 rounded-lg"
                                 >
-                                    Archive
+                                    <Trash2 size={14} /> Archive Entry
                                 </button>
                             </div>
                         </div>
                     )}
                 </div>
             </motion.div>
+
+            {/* Confirmation Overlay within Modal */}
+            <AnimatePresence>
+                {showConfirmDelete && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[400] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(false); }}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-[24px] p-8 max-w-md w-full shadow-2xl border border-stone-100"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6">
+                                <Trash2 size={20} />
+                            </div>
+                            <h3 className="text-xl font-bold text-stone-900 font-outfit uppercase tracking-tight mb-2">Confirm Archival</h3>
+                            <p className="text-[11px] text-stone-500 uppercase tracking-widest leading-relaxed mb-8">
+                                Are you sure you want to permanently delete the transaction for <span className="font-bold text-stone-900">{guest.guestName || guest.incomeCategory}</span>?
+                            </p>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setShowConfirmDelete(false)}
+                                    className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={executeDelete}
+                                    className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }
@@ -457,8 +566,84 @@ function NexuraInputLabel({ label, value, onChange, type = "text" }: { label: st
                 type={type}
                 value={value}
                 onChange={e => onChange(e.target.value)}
+                onWheel={(e) => e.currentTarget.type === "number" && e.currentTarget.blur()}
                 className="w-full h-11 px-4 rounded-lg bg-stone-50 border border-stone-100 outline-none text-[11px] font-normal tracking-widest placeholder:text-stone-200 hover:bg-white transition-all"
             />
+        </div>
+    );
+}
+
+/* ── Status Picker Components ── */
+
+export function RoomStatusPicker({ current, onChange }: { current: string, onChange: (val: string) => void }) {
+    const statuses = [
+        { id: 'clean', label: 'Clean', color: '#10b981', icon: <Sparkles size={10} /> },
+        { id: 'dirty', label: 'Dirty', color: '#f59e0b', icon: <Droplets size={10} /> },
+        { id: 'maintenance', label: 'Maint.', color: '#ef4444', icon: <Hammer size={10} /> },
+    ];
+
+    const active = statuses.find(s => s.id === current) || statuses[1];
+
+    return (
+        <div className="flex items-center gap-1">
+            {statuses.map((s) => (
+                <button
+                    key={s.id}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onChange(s.id); }}
+                    title={s.label}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 border ${
+                        current === s.id 
+                            ? 'scale-110 shadow-sm' 
+                            : 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0'
+                    }`}
+                    style={{ 
+                        backgroundColor: current === s.id ? `${s.color}15` : 'transparent',
+                        borderColor: current === s.id ? s.color : 'transparent',
+                        color: s.color 
+                    }}
+                >
+                    {s.icon}
+                </button>
+            ))}
+            <span className="text-[8px] font-bold uppercase tracking-tighter ml-1" style={{ color: active.color }}>
+                {active.label}
+            </span>
+        </div>
+    );
+}
+
+export function GuestStatusPicker({ current, onChange }: { current: string, onChange: (val: string) => void }) {
+    const statuses = [
+        { id: 'arriving', label: 'Arriving', color: '#3b82f6', icon: <Clock size={10} /> },
+        { id: 'checked_in', label: 'Checked In', color: '#10b981', icon: <UserCheck size={10} /> },
+        { id: 'checked_out', label: 'Checked Out', color: '#71717a', icon: <LogOut size={10} /> },
+        { id: 'no_show', label: 'No Show', color: '#ef4444', icon: <AlertCircle size={10} /> },
+    ];
+
+    const active = statuses.find(s => s.id === current) || statuses[0];
+
+    return (
+        <div className="flex flex-wrap items-center justify-center gap-1 max-w-[120px]">
+            {statuses.map((s) => (
+                <button
+                    key={s.id}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onChange(s.id); }}
+                    className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest transition-all duration-200 border ${
+                        current === s.id 
+                            ? 'shadow-sm translate-y-[-1px]' 
+                            : 'opacity-40 hover:opacity-100'
+                    }`}
+                    style={{ 
+                        backgroundColor: current === s.id ? `${s.color}10` : 'transparent',
+                        borderColor: current === s.id ? `${s.color}40` : 'transparent',
+                        color: current === s.id ? s.color : '#a8a29e'
+                    }}
+                >
+                    {s.label}
+                </button>
+            ))}
         </div>
     );
 }

@@ -152,9 +152,41 @@ function MonthlyCalendar({ value, onChange }: { value: string, onChange: (v: str
     );
 }
 
+/* ── Yearly Calendar ── */
+function YearlyCalendar({ value, onChange }: { value: string, onChange: (v: string) => void }) {
+    const today = new Date();
+    const currentYear = value ? parseInt(value.split("-")[0]) : today.getFullYear();
+    const years = Array.from({ length: 12 }, (_, i) => currentYear - 5 + i);
+
+    return (
+        <div className="w-[280px] p-4">
+            <div className="text-center mb-4 py-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Pilih Tahun</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+                {years.map((yr) => (
+                    <button
+                        key={yr}
+                        onClick={() => onChange(`${yr}-01-01`)}
+                        className={`py-3 px-1 rounded-lg text-xs font-bold transition-all duration-150 ${
+                            currentYear === yr
+                                ? "bg-stone-900 text-white shadow-sm"
+                                : today.getFullYear() === yr
+                                    ? "border border-stone-300 text-stone-800 hover:bg-stone-100"
+                                    : "text-stone-600 hover:bg-stone-100"
+                        }`}
+                    >
+                        {yr}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 /* ── Main Custom Date Picker ── */
 interface CustomDatePickerProps {
-    mode: "daily" | "monthly";
+    mode: "daily" | "monthly" | "yearly";
     value: string;
     onChange: (v: string) => void;
     formatDisplay: (v: string) => string;
@@ -176,7 +208,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ mode, value,
 
     const handleChange = (v: string) => {
         onChange(v);
-        if (mode === "daily") setOpen(false);
+        if (mode === "daily" || mode === "yearly") setOpen(false);
     };
 
     return (
@@ -208,8 +240,10 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ mode, value,
                     >
                         {mode === "daily" ? (
                             <DailyCalendar value={value} onChange={handleChange} />
-                        ) : (
+                        ) : mode === "monthly" ? (
                             <MonthlyCalendar value={value} onChange={handleChange} />
+                        ) : (
+                            <YearlyCalendar value={value} onChange={handleChange} />
                         )}
                     </motion.div>
                 )}

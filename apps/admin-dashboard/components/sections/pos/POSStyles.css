@@ -1,0 +1,45 @@
+@reference "../../../app/globals.css";
+
+/* ── Nexura POS Terminal Refined Aesthetics ── */
+
+:root {
+    --sage-primary: #788069;
+    --sage-soft: rgba(120, 128, 105, 0.1);
+    --sage-glow: rgba(120, 128, 105, 0.15);
+}
+
+.pos-glass {
+    @apply bg-white/80 backdrop-blur-xl border border-stone-100 shadow-sm;
+}
+
+/* Category Pill - Refined Sage Style */
+.category-pill-sage {
+    background: var(--sage-soft);
+    border: 1px solid rgba(120, 128, 105, 0.15);
+}
+
+/* Advanced Card Hover - Reduced Elevation */
+.powerful-card {
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.powerful-card:hover {
+    transform: translateY(-8px);
+    @apply border-sage/20 shadow-xl shadow-sage/5;
+}
+
+/* Custom Scrollbar */
+.pos-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.pos-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-stone-200 rounded-full hover:bg-sage/30 transition-colors;
+}
+
+.text-sage-primary {
+    color: var(--sage-primary);
+}
+
+.bg-sage-primary {
+    background-color: var(--sage-primary);
+}
