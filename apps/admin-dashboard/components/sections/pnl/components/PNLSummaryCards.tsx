@@ -166,6 +166,14 @@ export const PNLSummaryCards: React.FC<PNLSummaryCardsProps> = ({
                     </div>
                 }
             />
+            <SummaryCard
+                label="Net Profit (Recon Owner)"
+                icon={<ArrowUpRight size={18} />}
+                accent="#10b981"
+                value={pnlResult?.card12_ReconOwner || 0}
+                loading={loading}
+                variants={rise}
+            />
         </motion.div>
     );
 };

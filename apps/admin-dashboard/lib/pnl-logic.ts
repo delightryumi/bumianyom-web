@@ -105,7 +105,7 @@ export function processPnLData(
     card8_TotalExpenses: totalExtraExpenses,
     card9_FeeGross: totalRevenue * (mgmtFeePercentage / 100), 
     card10_GAP: 0,
-    card11_VAT: revenueHotelCollect * (vatPercentage / 100),
+    card11_VAT: totalRevenue * (vatPercentage / 100),
     card12_ReconOwner: 0, 
     netProfit: 0,
     gopBasis: totalRevenue,
@@ -118,10 +118,12 @@ export function processPnLData(
     }))
   };
 
-  // User Formula: Total GOP = Card 1 - Card 5 (Exp) - Card 6 (VAT) - Card 8 (Mgmt Fee)
-  pnlResult.card7_TotalGOP = pnlResult.card1_TotalRevenue - pnlResult.card8_TotalExpenses - pnlResult.card11_VAT - pnlResult.card9_FeeGross;
-  pnlResult.netProfit = pnlResult.card7_TotalGOP;
-  pnlResult.card12_ReconOwner = pnlResult.card7_TotalGOP;
+  // Standard GOP Formula: GOP = Total Revenue - Total Operating Expenses
+  pnlResult.card7_TotalGOP = pnlResult.card1_TotalRevenue - pnlResult.card8_TotalExpenses;
+  
+  // Final Reconciliation (Net Profit): GOP - VAT - Management Fees
+  pnlResult.card12_ReconOwner = pnlResult.card7_TotalGOP - pnlResult.card11_VAT - pnlResult.card9_FeeGross;
+  pnlResult.netProfit = pnlResult.card12_ReconOwner;
 
   // Update investor amounts based on the final net profit
   pnlResult.investorDistributions = pnlResult.investorDistributions.map(dist => ({

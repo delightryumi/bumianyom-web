@@ -23,22 +23,54 @@ export default function POSLayout({
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [userPermissions, setUserPermissions] = useState<Record<string, boolean> | null>(null);
+    const [isSuperadmin, setIsSuperadmin] = useState(false);
+    const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
-    // Fetch User Role for Permission Checks
+    // Fetch User Role & Permissions for Permission Checks
     useEffect(() => {
         if (!user?.email) return;
         
-        const fetchRole = async () => {
-            const userDocId = user.email!.replace(/[@.]/g, '_');
-            const docRef = doc(db, "users_master", userDocId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                setUserRole(docSnap.data().role);
+        const fetchPermissions = async () => {
+            setIsLoadingPermissions(true);
+            try {
+                const userDocId = user.email!.replace(/[@.]/g, '_');
+                const userDocRef = doc(db, "users_master", userDocId);
+                const userSnap = await getDoc(userDocRef);
+                
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    const role = userData.role;
+                    setUserRole(role);
+                    
+                    if (role === "superadmin") {
+                        setIsSuperadmin(true);
+                        setIsLoadingPermissions(false);
+                        return;
+                    }
+
+                    // Get Role Permissions
+                    const roleId = role.toLowerCase().replace(/\s+/g, '_');
+                    const roleSnap = await getDoc(doc(db, "roles_master", roleId));
+                    if (roleSnap.exists()) {
+                        const perms = roleSnap.data().permissions || {};
+                        setUserPermissions(perms);
+                        
+                        // Check if POS is disabled
+                        if (perms.pos === false) {
+                            router.push('/overview');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching permissions:", err);
+            } finally {
+                setIsLoadingPermissions(false);
             }
         };
 
-        fetchRole();
-    }, [user]);
+        fetchPermissions();
+    }, [user, router]);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -57,7 +89,18 @@ export default function POSLayout({
         setTimeout(() => setIsSyncing(false), 2000);
     };
 
-    const canAccessDashboard = userRole === "superadmin" || userRole === "General Manager";
+    const canAccessDashboard = isSuperadmin || userRole === "General Manager" || userPermissions?.overview !== false;
+
+    if (isLoadingPermissions) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-4">
+                    <RefreshCw className="animate-spin text-sage" size={32} />
+                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em]">Verifying Terminal Access...</span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-screen bg-white flex flex-col font-sans selection:bg-sage/20 overflow-hidden">

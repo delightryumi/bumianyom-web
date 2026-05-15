@@ -47,7 +47,7 @@ import autoTable from "jspdf-autotable";
 import { useRouter } from "next/navigation";
 import { CustomDatePicker } from "./CustomDatePicker";
 import { useForecast } from "./useForecast";
-import { GuestDetailModal } from "../overview/OverviewComponents";
+import { GuestDetailModal } from "../overview/GuestDetailModal";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
@@ -74,6 +74,7 @@ export const ForecastSection: React.FC = () => {
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
     const [isOtherRevenueOpen, setIsOtherRevenueOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState<"cards" | "charts">("cards");
+    const [searchQuery, setSearchQuery] = useState("");
     const stats = useForecast(viewMode, selectedDate);
 
     const formatCurrency = (val: number) => {
@@ -617,6 +618,8 @@ export const ForecastSection: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Cari tamu atau booking..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 className="h-9 px-4 rounded-lg bg-stone-50 border border-stone-100 focus:bg-white focus:border-stone-300 outline-none text-xs text-stone-600 transition-colors duration-200 w-80 placeholder:text-stone-300"
                             />
                         </div>
@@ -627,7 +630,7 @@ export const ForecastSection: React.FC = () => {
                         >
 
                             {/* Table */}
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto scrollbar-hide">
                                 <table className="w-full text-left border-collapse min-w-[900px]">
                                     <thead>
                                         <tr className="border-b border-stone-50 text-[10px] uppercase font-medium text-stone-300 tracking-[0.15em]">
@@ -649,7 +652,11 @@ export const ForecastSection: React.FC = () => {
                                                     </td>
                                                 </tr>
                                             ))
-                                        ) : stats.entries.filter(e => !activeFilter || e.type === activeFilter).length === 0 ? (
+                                        ) : stats.entries.filter(e => 
+                                            (!activeFilter || e.type === activeFilter) && 
+                                            ((e.guestName || e.incomeCategory || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                             (e.bookingId || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                                        ).length === 0 ? (
                                             <tr>
                                                 <td colSpan={7} className="py-20 text-center">
                                                     <div className="flex flex-col items-center gap-3">
@@ -663,7 +670,11 @@ export const ForecastSection: React.FC = () => {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            stats.entries.filter(e => !activeFilter || e.type === activeFilter).map((entry: any, i: number) => (
+                                            stats.entries.filter(e => 
+                                                (!activeFilter || e.type === activeFilter) && 
+                                                ((e.guestName || e.incomeCategory || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                 (e.bookingId || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                                            ).map((entry: any, i: number) => (
                                                 <tr key={i} className="group border-b border-stone-50 last:border-0 hover:bg-stone-50/40 transition-colors duration-150">
                                                     {/* Detail Tamu / Item */}
                                                     <td className="py-6 px-8 text-center">

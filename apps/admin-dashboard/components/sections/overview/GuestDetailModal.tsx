@@ -3,29 +3,21 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-    Eye, 
-    Pencil, 
     Trash2,
-    BedDouble,
-    Globe,
-    LogIn,
-    ArrowUpRight,
     Save,
-    Info,
     User,
-    CreditCard,
-    Home,
-    MessageSquare,
-    Sparkles,
-    Droplets,
-    Hammer,
-    Clock,
-    UserCheck,
-    LogOut,
-    AlertCircle
+    ArrowUpRight
 } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, getDoc, collection, getDocs, setDoc } from "firebase/firestore";
+import { getChannelLogo } from "./StatCard";
+import "./FolioAesthetic.css";
+
+interface GuestDetailModalProps {
+    guest: any;
+    isEditing: boolean;
+    onClose: () => void;
+}
 
 const CHANNELS = [
     { name: "Traveloka", logo: "/channels/traveloka.png" },
@@ -41,84 +33,7 @@ const CHANNELS = [
     { name: "Booking Engine", logo: "/channels/nexura.png" },
 ];
 
-export const getChannelLogo = (name: string) => {
-    return CHANNELS.find(c => c.name === name)?.logo || "/channels/walk_in.png";
-};
-
-/* ── UI Components ── */
-
-export function PanelItem({ label, value }: { label: string, value: string }) {
-    return (
-        <div className="space-y-1">
-            <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{label}</p>
-            <p className="text-[12px] font-medium text-stone-700 font-outfit uppercase">{value}</p>
-        </div>
-    );
-}
-
-export function StatCard({ icon, label, count, accent, items = [], onItemClick }: any) {
-    return (
-        <motion.div 
-            whileHover={{ y: -2 }}
-            style={{ padding: '50px' }}
-            className="bg-white rounded-[24px] border border-stone-100 shadow-xl flex flex-col gap-6"
-        >
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white shadow-sm border border-stone-50" style={{ color: accent }}>
-                        {icon}
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">{label}</p>
-                </div>
-            </div>
-
-            <div>
-                <p className="text-4xl font-semibold text-stone-900 font-outfit tracking-tight">{count}</p>
-            </div>
-
-            <div className="space-y-3">
-                {items.length === 0 ? (
-                    <p className="text-[9px] font-medium text-stone-200 uppercase tracking-widest py-2">No activity recorded</p>
-                ) : (
-                    items.slice(0, 5).map((item: any, idx: number) => (
-                        <button 
-                            key={idx}
-                            onClick={() => onItemClick?.(item)}
-                            className="w-full text-left p-4 hover:bg-white/50 rounded-2xl transition-all group/item border border-transparent hover:border-stone-100/50"
-                        >
-                            <div className="flex justify-between items-center mb-0">
-                                <div className="flex items-center gap-4 flex-1">
-                                    <div className="w-10 h-10 flex items-center justify-center bg-stone-50 rounded-xl overflow-hidden flex-shrink-0">
-                                        <img src={getChannelLogo(item.channel)} alt="" className="w-6 h-6 object-contain" />
-                                    </div>
-                                    <div className="space-y-0.5 overflow-hidden">
-                                        <p className="text-[12px] font-semibold text-stone-800 uppercase font-outfit truncate">{item.guestName || "Sale"}</p>
-                                        <div className="flex items-center gap-1.5">
-                                            <BedDouble size={10} className="text-stone-300" />
-                                            <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest truncate">
-                                                {item.roomType ? `${item.roomType} ${item.roomNumber ? `(${item.roomNumber})` : ''}` : (item.incomeCategory || '---')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0 ml-4">
-                                    <p className="text-[11px] font-medium text-stone-900 font-mono-jb">Rp {Number(item.amount).toLocaleString('id-ID')}</p>
-                                    <p className={`text-[8px] font-black uppercase tracking-tight ${item.paymentStatus?.includes('Lunas') || !item.paymentStatus ? 'text-sage' : 'text-amber-500'}`}>
-                                        {item.paymentStatus || 'Settled'}
-                                    </p>
-                                </div>
-                            </div>
-                        </button>
-                    ))
-                )}
-            </div>
-        </motion.div>
-    );
-}
-
-import "./FolioAesthetic.css";
-
-export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: { guest: any, isEditing: boolean, onClose: () => void }) {
+export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: GuestDetailModalProps) {
     const [isEditMode, setIsEditMode] = React.useState(initialEditing);
     const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
     const [formData, setFormData] = React.useState({
@@ -145,14 +60,10 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
     const handleSave = async () => {
         try {
             const hotelId = "bumi-anyom-resort";
-            
-            // 1. Identify source and destination dates
             const oldDate = guest.checkInDate || guest.checkIn || new Date(guest.timestamp).toISOString().split('T')[0];
             const newDate = formData.checkIn;
-            
             const oldDocId = `${hotelId}_${oldDate}`;
             const newDocId = `${hotelId}_${newDate}`;
-            
             const updatedEntry = {
                 ...guest,
                 ...formData,
@@ -161,9 +72,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                 amount: formData.isSplitBill ? (Number(formData.paidAmount1) + Number(formData.paidAmount2)) : Number(formData.paidAmount1),
             };
 
-            // 2. Handle Document Migration if date changed
             if (oldDocId !== newDocId) {
-                // Remove from OLD
                 const oldRef = doc(db, "daily_revenue", oldDocId);
                 const oldSnap = await getDoc(oldRef);
                 if (oldSnap.exists()) {
@@ -171,38 +80,23 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                     const filtered = oldEntries.filter((e: any) => e.timestamp !== guest.timestamp);
                     await updateDoc(oldRef, { entries: filtered });
                 }
-
-                // Add to NEW
                 const newRef = doc(db, "daily_revenue", newDocId);
                 const newSnap = await getDoc(newRef);
                 if (newSnap.exists()) {
                     const newEntries = newSnap.data().entries || [];
-                    await updateDoc(newRef, { 
-                        entries: [...newEntries, updatedEntry],
-                        date: newDate 
-                    });
+                    await updateDoc(newRef, { entries: [...newEntries, updatedEntry], date: newDate });
                 } else {
-                    await setDoc(newRef, { 
-                        entries: [updatedEntry],
-                        date: newDate 
-                    });
+                    await setDoc(newRef, { entries: [updatedEntry], date: newDate });
                 }
             } else {
-                // Just update in CURRENT
                 const docRef = doc(db, "daily_revenue", oldDocId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const entries = docSnap.data().entries || [];
-                    const updatedEntries = entries.map((e: any) => 
-                        e.timestamp === guest.timestamp ? updatedEntry : e
-                    );
-                    await updateDoc(docRef, { 
-                        entries: updatedEntries,
-                        date: oldDate 
-                    });
+                    const updatedEntries = entries.map((e: any) => e.timestamp === guest.timestamp ? updatedEntry : e);
+                    await updateDoc(docRef, { entries: updatedEntries, date: oldDate });
                 }
             }
-
             onClose();
         } catch (error) {
             console.error(error);
@@ -213,7 +107,6 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
         try {
             const docRef = doc(db, "daily_revenue", guest._docId);
             const docSnap = await getDoc(docRef);
-            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
                 const filtered = entries.filter((e: any) => e.timestamp !== guest.timestamp);
@@ -244,15 +137,15 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                 className="bg-white w-full max-w-[580px] h-full shadow-2xl rounded-none overflow-hidden flex flex-col border-l border-stone-200"
                 onClick={e => e.stopPropagation()}
             >
-                {/* Header - Institutional Style */}
+                {/* Header */}
                 <div className="px-20 py-10 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3 mb-1">
-                            <div className="w-6 h-[1px] bg-sage/30" />
-                            <span className="text-[9px] font-bold text-sage uppercase tracking-[0.4em]">{isEditMode ? "Adjustment Mode" : "Digital Folio"}</span>
+                            <div className="w-6 h-[1px] bg-[#788069]/30" />
+                            <span className="text-[9px] font-bold text-[#788069] uppercase tracking-[0.4em]">{isEditMode ? "Adjustment Mode" : "Digital Folio"}</span>
                         </div>
                         <h2 className="text-2xl font-light text-stone-900 uppercase font-outfit tracking-tight">
-                            {isEditMode ? "Modify" : "Review"} <span className="font-semibold text-sage">{guest.type === 'accommodation' ? 'Entry' : 'Income'}</span>
+                            {isEditMode ? "Modify" : "Review"} <span className="font-semibold text-[#788069]">{guest.type === 'accommodation' ? 'Entry' : 'Income'}</span>
                         </h2>
                     </div>
                     <button onClick={onClose} className="w-10 h-10 rounded-full flex items-center justify-center text-stone-300 hover:text-stone-900 hover:bg-stone-100 transition-all">
@@ -266,7 +159,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                             {/* Section 01: Identity */}
                             <section>
                                 <div className="flex items-center gap-4 mb-8">
-                                    <span className="text-[9px] font-bold text-sage bg-sage/5 px-2 py-0.5">01</span>
+                                    <span className="text-[9px] font-bold text-[#788069] bg-[#788069]/5 px-2 py-0.5">01</span>
                                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-stone-900 font-outfit">Identity & Stay</h3>
                                     <div className="h-[1px] bg-stone-100 flex-1" />
                                 </div>
@@ -282,14 +175,14 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                             {/* Section 02: Assignment */}
                             <section>
                                 <div className="flex items-center gap-4 mb-8">
-                                    <span className="text-[9px] font-bold text-sage bg-sage/5 px-2 py-0.5">02</span>
+                                    <span className="text-[9px] font-bold text-[#788069] bg-[#788069]/5 px-2 py-0.5">02</span>
                                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-stone-900 font-outfit">Stay Details</h3>
                                     <div className="h-[1px] bg-stone-100 flex-1" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="space-y-3">
                                         <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Room Category</label>
-                                        <div className="relative group luxury-input bg-white transition-all rounded-lg shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-stone-100/50 focus-within:border-sage focus-within:shadow-md">
+                                        <div className="relative group luxury-input bg-white transition-all rounded-lg shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-stone-100/50 focus-within:border-[#788069] focus-within:shadow-md">
                                             <select
                                                 value={formData.roomTypeId}
                                                 onChange={e => setFormData({...formData, roomTypeId: e.target.value})}
@@ -308,13 +201,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                             onChange={e => setFormData({...formData, channel: e.target.value})}
                                             className="w-full h-11 px-4 bg-white rounded-lg border border-stone-100 outline-none text-[11px] font-bold uppercase tracking-widest custom-select"
                                         >
-                                            <option>Walk-in</option>
-                                            <option>Website</option>
-                                            <option>Traveloka</option>
-                                            <option>Tiket.com</option>
-                                            <option>Booking.com</option>
-                                            <option>Agoda</option>
-                                            <option>Airbnb</option>
+                                            {CHANNELS.map(c => <option key={c.name}>{c.name}</option>)}
                                         </select>
                                     </div>
                                     <NexuraInputLabel label="Staff In-Charge" value={formData.staffName} onChange={(v: string) => setFormData({...formData, staffName: v})} />
@@ -324,30 +211,27 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                             {/* Section 03: Financials */}
                             <section>
                                 <div className="flex items-center gap-4 mb-8">
-                                    <span className="text-[9px] font-bold text-sage bg-sage/5 px-2 py-0.5">03</span>
+                                    <span className="text-[9px] font-bold text-[#788069] bg-[#788069]/5 px-2 py-0.5">03</span>
                                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-stone-900 font-outfit">Financials</h3>
                                     <div className="h-[1px] bg-stone-100 flex-1" />
                                 </div>
                                 <div className="space-y-10">
                                     <NexuraInputLabel label="Total Gross Amount" type="number" value={formData.totalAmount} onChange={(v: string) => setFormData({...formData, totalAmount: v})} />
-                                    
                                     <div className="flex items-center justify-between p-5 bg-stone-50/50 rounded-lg border border-stone-100">
                                         <div>
                                             <p className="text-[10px] font-bold uppercase text-stone-900 tracking-wider">Split Settlement</p>
                                             <p className="text-[9px] text-stone-400 uppercase tracking-widest">Enable dual payment methods</p>
                                         </div>
-                                        <button onClick={() => setFormData({...formData, isSplitBill: !formData.isSplitBill})} className={`w-10 h-5 relative rounded-full transition-all ${formData.isSplitBill ? 'bg-sage' : 'bg-stone-200'}`}>
+                                        <button onClick={() => setFormData({...formData, isSplitBill: !formData.isSplitBill})} className={`w-10 h-5 relative rounded-full transition-all ${formData.isSplitBill ? 'bg-[#788069]' : 'bg-stone-200'}`}>
                                             <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${formData.isSplitBill ? 'left-5.5' : 'left-0.5'}`} />
                                         </button>
                                     </div>
-
                                     <div className="grid grid-cols-2 gap-8">
                                         <NexuraInputLabel label={formData.isSplitBill ? "Payment A" : "Amount Paid"} type="number" value={formData.paidAmount1} onChange={(v: string) => setFormData({...formData, paidAmount1: v})} />
                                         {formData.isSplitBill && (
                                             <NexuraInputLabel label="Payment B" type="number" value={formData.paidAmount2} onChange={(v: string) => setFormData({...formData, paidAmount2: v})} />
                                         )}
                                     </div>
-
                                     <div className="space-y-4">
                                         <label className="text-[9px] font-bold uppercase tracking-[0.2em] text-stone-400 ml-1">Payment Status</label>
                                         <div className="grid grid-cols-2 gap-2">
@@ -355,7 +239,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                                 <button 
                                                     key={s}
                                                     onClick={() => setFormData({...formData, paymentStatus: s, status: s})}
-                                                    className={`h-9 text-[8px] font-bold uppercase tracking-widest rounded-lg border transition-all ${formData.paymentStatus === s ? 'bg-sage text-white border-sage' : 'bg-white text-stone-400 border-stone-100'}`}
+                                                    className={`h-9 text-[8px] font-bold uppercase tracking-widest rounded-lg border transition-all ${formData.paymentStatus === s ? 'bg-[#788069] text-white border-[#788069]' : 'bg-white text-stone-400 border-stone-100'}`}
                                                 >
                                                     {s}
                                                 </button>
@@ -368,7 +252,7 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                             {/* Section 04: Remarks */}
                             <section>
                                 <div className="flex items-center gap-4 mb-8">
-                                    <span className="text-[9px] font-bold text-sage bg-sage/5 px-2 py-0.5">04</span>
+                                    <span className="text-[9px] font-bold text-[#788069] bg-[#788069]/5 px-2 py-0.5">04</span>
                                     <h3 className="text-[11px] font-bold uppercase tracking-[0.3em] text-stone-900 font-outfit">Remarks</h3>
                                     <div className="h-[1px] bg-stone-100 flex-1" />
                                 </div>
@@ -376,17 +260,14 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                     value={formData.note}
                                     onChange={e => setFormData({...formData, note: e.target.value})}
                                     rows={3}
-                                    className="w-full bg-stone-50/50 rounded-lg p-4 text-[11px] font-medium text-stone-700 outline-none border border-stone-100 focus:border-sage transition-all resize-none"
+                                    className="w-full bg-stone-50/50 rounded-lg p-4 text-[11px] font-medium text-stone-700 outline-none border border-stone-100 focus:border-[#788069] transition-all resize-none"
                                     placeholder="Enter internal audit notes..."
                                 />
                             </section>
                         </div>
                     ) : (
-                        /* Folio Review Mode - Specialized Precision Aesthetic */
                         <div className="w-full mx-auto folio-container p-10 space-y-10 my-4">
-                            {/* Audited Stamp Decorative */}
                             <div className="folio-stamp" />
-
                             <div className="flex justify-between items-start border-b border-stone-100 pb-8">
                                 <div className="space-y-2">
                                     <div className="folio-header-badge">Ledger Entry</div>
@@ -399,7 +280,6 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                     <p className="text-[7px] text-stone-300 mt-1">{new Date(guest.timestamp).toLocaleString()}</p>
                                 </div>
                             </div>
-
                             <div className="grid grid-cols-2 gap-y-8 gap-x-12">
                                 <div className="space-y-1.5">
                                     <p className="folio-label"><User size={9} /> Guest</p>
@@ -420,11 +300,10 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                 <div className="space-y-1.5 text-right">
                                     <p className="folio-label">Inventory</p>
                                     <p className="folio-value !text-[11px]">
-                                        {guest.roomType || "Service"} <span className="text-sage mx-1">|</span> {guest.roomNumber ? `RM ${guest.roomNumber}` : "NA"}
+                                        {guest.roomType || "Service"} <span className="text-[#788069] mx-1">|</span> {guest.roomNumber ? `RM ${guest.roomNumber}` : "NA"}
                                     </p>
                                 </div>
                             </div>
-
                             <div className="space-y-6 pt-2">
                                 <div className="folio-divider-dashed" />
                                 <div className="flex justify-between items-center text-[8px] font-bold text-stone-300 uppercase tracking-[0.4em]">
@@ -442,11 +321,10 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                     </div>
                                 </div>
                             </div>
-
                             <div className="folio-total-box p-5">
                                 <div className="space-y-0.5">
                                     <p className="folio-label">Status</p>
-                                    <p className={`text-[10px] font-black uppercase tracking-widest ${guest.paymentStatus?.includes('Lunas') ? 'text-sage' : 'text-amber-500'}`}>
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${guest.paymentStatus?.includes('Lunas') ? 'text-[#788069]' : 'text-amber-500'}`}>
                                         {guest.paymentStatus || 'Pending'}
                                     </p>
                                 </div>
@@ -455,9 +333,8 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                     <p className="text-2xl font-black text-stone-900 folio-mono">Rp {Number(guest.amount).toLocaleString('id-ID')}</p>
                                 </div>
                             </div>
-
                             <div className="pt-4 space-y-3">
-                                <p className="folio-label italic border-l-2 border-sage pl-2">Audit Note</p>
+                                <p className="folio-label italic border-l-2 border-[#788069] pl-2">Audit Note</p>
                                 <p className="text-[10px] text-stone-500 leading-relaxed italic font-outfit bg-stone-50/30 p-4 rounded-lg">
                                     {guest.note || "System Log: No operational remarks recorded."}
                                 </p>
@@ -466,43 +343,20 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                     )}
                 </div>
 
-                {/* Footer - Synchronized with Forecast System */}
                 <div className="px-20 h-24 border-t border-stone-100 flex items-center justify-end gap-4 bg-white">
                     {isEditMode ? (
                         <>
-                            <button 
-                                onClick={() => setIsEditMode(false)} 
-                                className="text-[9px] font-medium text-stone-300 hover:text-stone-900 uppercase tracking-[0.4em] transition-colors"
-                            >
-                                Abort
-                            </button>
-                            <button 
-                                onClick={handleSave} 
-                                className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white hover:brightness-110 active:scale-95 disabled:bg-stone-50 disabled:text-stone-300 disabled:cursor-not-allowed rounded-lg"
-                                style={{ backgroundColor: "#788069" }}
-                            >
+                            <button onClick={() => setIsEditMode(false)} className="text-[9px] font-medium text-stone-300 hover:text-stone-900 uppercase tracking-[0.4em] transition-colors">Abort</button>
+                            <button onClick={handleSave} className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white bg-[#788069] hover:brightness-110 active:scale-95 rounded-lg">
                                 <Save size={14} /> Commit Changes
                             </button>
                         </>
                     ) : (
                         <div className="flex w-full items-center justify-between">
-                            <button 
-                                onClick={onClose}
-                                className="text-[9px] font-medium text-stone-300 hover:text-stone-900 uppercase tracking-[0.4em] transition-colors"
-                            >
-                                Close
-                            </button>
+                            <button onClick={onClose} className="text-[9px] font-medium text-stone-300 hover:text-stone-900 uppercase tracking-[0.4em] transition-colors">Close</button>
                             <div className="flex gap-3">
-                                <button 
-                                    onClick={() => setIsEditMode(true)} 
-                                    className="h-10 px-6 text-[10px] font-medium uppercase tracking-[0.1em] border border-stone-100 text-stone-400 hover:text-stone-900 hover:bg-stone-50 transition-all rounded-lg"
-                                >
-                                    Modify
-                                </button>
-                                <button 
-                                    onClick={() => setShowConfirmDelete(true)} 
-                                    className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white bg-red-500 hover:bg-red-600 active:scale-95 rounded-lg"
-                                >
+                                <button onClick={() => setIsEditMode(true)} className="h-10 px-6 text-[10px] font-medium uppercase tracking-[0.1em] border border-stone-100 text-stone-400 hover:text-stone-900 hover:bg-stone-50 transition-all rounded-lg">Modify</button>
+                                <button onClick={() => setShowConfirmDelete(true)} className="flex items-center justify-center gap-2 h-10 min-w-[140px] px-6 text-[10px] font-medium uppercase tracking-[0.1em] transition-all text-white bg-red-500 hover:bg-red-600 active:scale-95 rounded-lg">
                                     <Trash2 size={14} /> Archive Entry
                                 </button>
                             </div>
@@ -511,20 +365,15 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                 </div>
             </motion.div>
 
-            {/* Confirmation Overlay within Modal */}
             <AnimatePresence>
                 {showConfirmDelete && (
                     <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[400] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(false); }}
                     >
                         <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white rounded-[24px] p-8 max-w-md w-full shadow-2xl border border-stone-100"
                         >
@@ -536,18 +385,8 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
                                 Are you sure you want to permanently delete the transaction for <span className="font-bold text-stone-900">{guest.guestName || guest.incomeCategory}</span>?
                             </p>
                             <div className="flex gap-4">
-                                <button 
-                                    onClick={() => setShowConfirmDelete(false)}
-                                    className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    onClick={executeDelete}
-                                    className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors"
-                                >
-                                    Delete
-                                </button>
+                                <button onClick={() => setShowConfirmDelete(false)} className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors">Cancel</button>
+                                <button onClick={executeDelete} className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors">Delete</button>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -557,93 +396,15 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose }: 
     );
 }
 
-// Utility Components matching the Nexura System
 function NexuraInputLabel({ label, value, onChange, type = "text" }: { label: string, value: any, onChange: any, type?: string }) {
     return (
         <div className="space-y-3">
             <span className="text-[9px] font-medium uppercase tracking-[0.2em] ml-0.5" style={{ color: "#788069" }}>{label}</span>
             <input
-                type={type}
-                value={value}
-                onChange={e => onChange(e.target.value)}
+                type={type} value={value} onChange={e => onChange(e.target.value)}
                 onWheel={(e) => e.currentTarget.type === "number" && e.currentTarget.blur()}
                 className="w-full h-11 px-4 rounded-lg bg-stone-50 border border-stone-100 outline-none text-[11px] font-normal tracking-widest placeholder:text-stone-200 hover:bg-white transition-all"
             />
-        </div>
-    );
-}
-
-/* ── Status Picker Components ── */
-
-export function RoomStatusPicker({ current, onChange }: { current: string, onChange: (val: string) => void }) {
-    const statuses = [
-        { id: 'clean', label: 'Clean', color: '#10b981', icon: <Sparkles size={10} /> },
-        { id: 'dirty', label: 'Dirty', color: '#f59e0b', icon: <Droplets size={10} /> },
-        { id: 'maintenance', label: 'Maint.', color: '#ef4444', icon: <Hammer size={10} /> },
-    ];
-
-    const active = statuses.find(s => s.id === current) || statuses[1];
-
-    return (
-        <div className="flex items-center gap-1">
-            {statuses.map((s) => (
-                <button
-                    key={s.id}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onChange(s.id); }}
-                    title={s.label}
-                    className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 border ${
-                        current === s.id 
-                            ? 'scale-110 shadow-sm' 
-                            : 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0'
-                    }`}
-                    style={{ 
-                        backgroundColor: current === s.id ? `${s.color}15` : 'transparent',
-                        borderColor: current === s.id ? s.color : 'transparent',
-                        color: s.color 
-                    }}
-                >
-                    {s.icon}
-                </button>
-            ))}
-            <span className="text-[8px] font-bold uppercase tracking-tighter ml-1" style={{ color: active.color }}>
-                {active.label}
-            </span>
-        </div>
-    );
-}
-
-export function GuestStatusPicker({ current, onChange }: { current: string, onChange: (val: string) => void }) {
-    const statuses = [
-        { id: 'arriving', label: 'Arriving', color: '#3b82f6', icon: <Clock size={10} /> },
-        { id: 'checked_in', label: 'Checked In', color: '#10b981', icon: <UserCheck size={10} /> },
-        { id: 'checked_out', label: 'Checked Out', color: '#71717a', icon: <LogOut size={10} /> },
-        { id: 'no_show', label: 'No Show', color: '#ef4444', icon: <AlertCircle size={10} /> },
-    ];
-
-    const active = statuses.find(s => s.id === current) || statuses[0];
-
-    return (
-        <div className="flex flex-wrap items-center justify-center gap-1 max-w-[120px]">
-            {statuses.map((s) => (
-                <button
-                    key={s.id}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onChange(s.id); }}
-                    className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest transition-all duration-200 border ${
-                        current === s.id 
-                            ? 'shadow-sm translate-y-[-1px]' 
-                            : 'opacity-40 hover:opacity-100'
-                    }`}
-                    style={{ 
-                        backgroundColor: current === s.id ? `${s.color}10` : 'transparent',
-                        borderColor: current === s.id ? `${s.color}40` : 'transparent',
-                        color: current === s.id ? s.color : '#a8a29e'
-                    }}
-                >
-                    {s.label}
-                </button>
-            ))}
         </div>
     );
 }

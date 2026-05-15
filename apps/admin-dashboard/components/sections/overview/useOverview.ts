@@ -31,6 +31,9 @@ export interface OverviewStats {
     todayCanceled: BookingEntry[];
     roomStatus: { occupied: number; available: number; total: number };
     latestBookings: BookingEntry[];
+    todayTransactions: any[];
+    dailyData: any[];
+    roomTypesData: any[];
 }
 
 const getLocalDateString = (date: Date) => {
@@ -56,6 +59,9 @@ export const useOverview = () => {
         todayCanceled: [],
         roomStatus: { occupied: 0, available: 0, total: 0 },
         latestBookings: [],
+        todayTransactions: [],
+        dailyData: [],
+        roomTypesData: [],
     });
 
     useEffect(() => {
@@ -67,7 +73,7 @@ export const useOverview = () => {
                 
                 // Query a range to catch overlaps (last 30 days should be enough)
                 const startRange = getLocalDateString(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-                const endRange = getLocalDateString(new Date(Date.now() + 1 * 24 * 60 * 60 * 1000)); // Include today/tomorrow
+                const endRange = getLocalDateString(new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)); // Include 15 days ahead for calendar
                 
                 const q = query(
                     collection(db, "daily_revenue"), 
@@ -80,23 +86,48 @@ export const useOverview = () => {
                     let checkOut: BookingEntry[] = [];
                     let cancels: BookingEntry[] = [];
                     let allAccommodation: any[] = [];
+                    let todayTransactions: any[] = [];
+                    let allDays: any[] = [];
                     
                     querySnapshot.forEach((docSnap) => {
-                        const entries = (docSnap.data().entries || []).map((e: any) => ({ ...e, _docId: docSnap.id }));
+                        const data = docSnap.data();
+                        const docDate = data.date || docSnap.id;
+                        allDays.push({ ...data, date: docDate });
+
+                        const entries = (data.entries || []).map((e: any) => ({ ...e, _docId: docSnap.id }));
+                        
                         entries.forEach((e: any) => {
-                            if (e.status === "CANCELLED") {
-                                if (e.checkInDate === dateStr) cancels.push(e);
-                            } else if (e.type === "accommodation" || (!e.type && e.guestName)) {
-                                if (e.checkInDate === dateStr) checkIn.push(e);
+                            const isCancelled = e.status === "CANCELLED";
+                            const isAccommodation = e.type === "accommodation" || (!e.type && e.guestName);
+                            
+                            // 1. Logic for Check-In Today (Arrivals + Extensions)
+                            if (isAccommodation && !isCancelled) {
+                                if (e.checkInDate === dateStr) {
+                                    checkIn.push({ ...e, isExtend: false });
+                                    todayTransactions.push({ ...e, isExtend: false });
+                                } else if (e.checkInDate < dateStr && e.checkOutDate > dateStr) {
+                                    checkIn.push({ ...e, isExtend: true });
+                                    todayTransactions.push({ ...e, isExtend: true });
+                                }
+                                
                                 if (e.checkOutDate === dateStr) checkOut.push(e);
                                 allAccommodation.push(e);
+                            }
+
+                            // 2. Logic for Cancellations
+                            if (isCancelled && e.checkInDate === dateStr) {
+                                cancels.push(e);
+                            }
+
+                            // 3. Logic for "Other Income" created today
+                            if (!isAccommodation && docDate === dateStr) {
+                                todayTransactions.push(e);
                             }
                         });
                     });
                     
-                    const latest = [...allAccommodation]
-                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                        .slice(0, 10);
+                    const latest = [...todayTransactions]
+                        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                     
                     setStats(prev => {
                         return {
@@ -108,6 +139,8 @@ export const useOverview = () => {
                             todayCheckOuts: checkOut,
                             todayCanceled: cancels,
                             latestBookings: latest,
+                            todayTransactions: latest,
+                            dailyData: allDays,
                             roomStatus: {
                                 ...prev.roomStatus,
                                 occupied: checkIn.length,
@@ -125,10 +158,16 @@ export const useOverview = () => {
 
         const unsubRooms = onSnapshot(collection(db, "roomTypes"), (snapshot) => {
             let totalRooms = 0;
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const count = parseInt(data.totalRooms) || parseInt(data.quantity) || parseInt(data.stok) || 5;
+            const rTypes: any[] = [];
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const count = parseInt(data.roomCount) || parseInt(data.totalRooms) || parseInt(data.quantity) || 0;
                 totalRooms += count;
+                rTypes.push({
+                    id: docSnap.id,
+                    name: data.name,
+                    allotment: count
+                });
             });
             
             setStats(prev => {
@@ -136,6 +175,7 @@ export const useOverview = () => {
                 return { 
                     ...prev, 
                     roomsCount: snapshot.size,
+                    roomTypesData: rTypes,
                     roomStatus: { 
                         total: totalRooms,
                         occupied: occupied,

@@ -47,13 +47,13 @@ export const StatusWidget = () => {
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-6">
                     <button 
-                        onClick={() => router.push("/forecast")}
+                        onClick={() => router.push("/overview")}
                         className="flex items-center gap-2.5 text-stone-400 hover:text-stone-900 transition-colors group"
                     >
                         <div className="w-8 h-8 rounded-full flex items-center justify-center border border-stone-100 group-hover:bg-stone-50 transition-all">
                             <ArrowLeft size={14} />
                         </div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Forecast</span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Dashboard</span>
                     </button>
                     <div className="h-6 w-px bg-stone-200" />
                     <div className="flex flex-col">

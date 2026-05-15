@@ -1,22 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-    Eye, 
-    Pencil, 
-    Trash2,
-    Activity,
-    Plus,
-    Calendar,
-    ArrowRight,
-    LogIn,
-    XCircle,
-    LayoutDashboard,
-    Download,
-    FileText,
-    PlusCircle
-} from "lucide-react";
+import { PlusCircle, LogIn, Calendar, XCircle, Download, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -24,383 +9,213 @@ import { useOverview } from "./useOverview";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import Image from "next/image";
 
 // Modular Imports
 import "./OverviewStyles.css";
-import { 
-    StatCard, 
-    GuestDetailModal, 
-    getChannelLogo,
-    RoomStatusPicker,
-    GuestStatusPicker
-} from "./OverviewComponents";
-
-interface OverviewSectionProps {
-    onNavigate?: (section: any) => void;
-}
+import { StatCard } from "./StatCard";
+import { InventoryCalendar } from "./InventoryCalendar";
+import { AuditLedger } from "./AuditLedger";
+import { GuestDetailModal } from "./GuestDetailModal";
+import { DeleteConfirmModal } from "./DeleteConfirmModal";
+import { GuestListDrawer } from "./GuestListDrawer";
 
 const SAGE = "#788069";
 const PEACH = "#ffd8a6";
 
-export const OverviewSection: React.FC<OverviewSectionProps> = ({ onNavigate }) => {
+export function OverviewSection() {
     const router = useRouter();
     const { 
         loading, 
         checkInCount, checkOutCount, cancelCount,
         todayCheckIns, todayCheckOuts, todayCanceled,
-        latestBookings, roomStatus
+        latestBookings, roomStatus, dailyData, roomTypesData
     } = useOverview();
     
     const [selectedGuest, setSelectedGuest] = React.useState<any>(null);
     const [isEditing, setIsEditing] = React.useState(false);
+    const [bookingToDelete, setBookingToDelete] = React.useState<any>(null);
+    const [isCalendarOpen, setIsCalendarOpen] = React.useState(true);
+    const [calendarContext, setCalendarContext] = React.useState<{ bookings: any[], date: string, type: string } | null>(null);
 
     const dash = loading ? "—" : null;
 
-    const [bookingToDelete, setBookingToDelete] = React.useState<any>(null);
+    const handleStatusUpdate = async (item: any, field: string, value: string) => {
+        try {
+            const docRef = doc(db, "daily_revenue", item._docId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const entries = docSnap.data().entries || [];
+                const updatedEntries = entries.map((e: any) => 
+                    e.timestamp === item.timestamp ? { ...e, [field]: value } : e
+                );
+                await updateDoc(docRef, { entries: updatedEntries });
+            }
+        } catch (error) {
+            console.error("Status Update Failed", error);
+        }
+    };
 
     const executeDelete = async () => {
         if (!bookingToDelete) return;
-        
         try {
             const docRef = doc(db, "daily_revenue", bookingToDelete._docId);
             const docSnap = await getDoc(docRef);
-            
             if (docSnap.exists()) {
                 const entries = docSnap.data().entries || [];
-                const updatedEntries = entries.filter((e: any) => e.timestamp !== bookingToDelete.timestamp);
-                await updateDoc(docRef, { entries: updatedEntries });
-                // We don't use native alert anymore. Using toast if available, or just silent success since UI will update.
+                const filtered = entries.filter((e: any) => e.timestamp !== bookingToDelete.timestamp);
+                await updateDoc(docRef, { entries: filtered });
+                setBookingToDelete(null);
             }
         } catch (error) {
-            console.error("Failed to delete", error);
-        } finally {
-            setBookingToDelete(null);
+            console.error("Delete Failed", error);
         }
     };
 
-    const handleDeleteClick = (booking: any) => {
-        setBookingToDelete(booking);
-    };
-
-    const handleEdit = (booking: any) => {
-        setSelectedGuest(booking);
-        setIsEditing(true);
-    };
-
-    const handleStatusUpdate = async (booking: any, field: "guestStatus" | "roomStatus", value: string) => {
-        try {
-            const docRef = doc(db, "daily_revenue", booking._docId);
-            const docSnap = await getDoc(docRef);
-            
-            if (docSnap.exists()) {
-                const entries = docSnap.data().entries || [];
-                const updatedEntries = entries.map((e: any) => {
-                    if (e.timestamp === booking.timestamp) {
-                        return { ...e, [field]: value };
-                    }
-                    return e;
-                });
-                await updateDoc(docRef, { entries: updatedEntries });
-            }
-        } catch (error) {
-            console.error("Failed to update status:", error);
-        }
-    };
-
-    // ── Export Logic ──
     const handleExportExcel = () => {
-        const data = latestBookings.map(e => ({
-            "Waktu Input": new Date(e.timestamp).toLocaleString('id-ID'),
-            "Nama Tamu / Kategori": e.guestName || e.incomeCategory,
-            "Tipe": e.type === 'accommodation' ? 'Kamar' : 'Pendapatan Lain',
-            "Check-In": e.checkInDate || '-',
-            "Check-Out": e.checkOutDate || '-',
-            "Room Type": e.roomType || '-',
-            "Room No": e.roomNumber || '-',
-            "Channel": e.channel || 'Internal',
-            "Voucher": e.voucherCode || '-',
-            "Total Tagihan": Number(e.amount),
-            "Dibayar 1": Number(e.paidAmount1 || 0),
-            "Dibayar 2": Number(e.paidAmount2 || 0),
-            "Metode Bayar": e.paymentStatus,
-            "Split Bill": e.isSplitBill ? 'Ya' : 'Tidak',
-            "Sumber": e.source || '-',
-            "Status Transaksi": e.status,
-            "Input Oleh": e.staffName || '-',
-            "Status Kamar": e.roomStatus || '-',
-            "Status Tamu": e.guestStatus || '-',
-            "Catatan": e.note || ''
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Activity Ledger");
-        XLSX.writeFile(wb, `Detailed_Audit_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
+        const worksheet = XLSX.utils.json_to_sheet(latestBookings);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Audit");
+        XLSX.writeFile(workbook, `Daily_Audit_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     const handleExportPDF = () => {
-        const doc = new jsPDF('l', 'mm', 'a4');
-        
-        doc.setFontSize(16);
-        doc.text(`Nexura Analytics - Detailed Audit Activity Ledger`, 14, 15);
-        doc.setFontSize(9);
-        doc.text(`Exported: ${new Date().toLocaleString('id-ID')} | Hotel: Bumi Anyom Resort`, 14, 22);
-        
-        const tableData = latestBookings.map(e => [
-            e.checkInDate || '-',
-            e.guestName || e.incomeCategory || 'Sale',
-            e.roomNumber || '-',
-            e.channel || 'Internal',
-            `Rp ${Number(e.amount).toLocaleString('id-ID')}`,
-            e.paymentStatus || 'Settled',
-            e.status,
-            e.staffName || '-'
-        ]);
-
+        const doc = new jsPDF();
+        doc.text("Daily Audit Ledger - Bumi Anyom Resort", 14, 15);
         autoTable(doc, {
-            startY: 28,
-            head: [['Date', 'Guest / Category', 'Room', 'Channel', 'Amount', 'Payment', 'Status', 'Staff']],
-            body: tableData,
-            theme: 'grid',
-            headStyles: { fillColor: [120, 128, 105], fontSize: 8 },
-            styles: { fontSize: 7, cellPadding: 2 }
+            startY: 20,
+            head: [['Guest', 'Room', 'Channel', 'Amount', 'Status']],
+            body: latestBookings.map(b => [
+                b.guestName || "General Sale",
+                b.roomNumber || "NA",
+                b.channel,
+                `Rp ${Number(b.amount).toLocaleString('id-ID')}`,
+                b.paymentStatus || 'Pending'
+            ]),
         });
-
         doc.save(`Detailed_Audit_Ledger_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
     return (
-        <div className="space-y-40">
-            {/* Simple Header */}
-            <div className="flex justify-between items-center mb-8">
-                <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-sage uppercase tracking-[0.4em]">Operational Dashboard</p>
-                    <h1 className="text-4xl font-semibold text-stone-900 uppercase font-outfit tracking-tight">Command Center</h1>
+        <div className="w-full max-w-[1440px] mx-auto flex flex-col gap-8 font-sans">
+            {/* Header - Unified with Forecast */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-stone-100">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3.5 mb-1">
+                        <div className="w-7 h-7 rounded-md flex items-center justify-center bg-[#ffd8a6] text-[#788069]">
+                            <PlusCircle size={13} />
+                        </div>
+                        <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-stone-400">Nexura Operational</span>
+                    </div>
+                    <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+                        Command <span style={{ color: SAGE }}>Center</span>
+                    </h1>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-4">
                     <button
                         onClick={() => router.push(`/forecast/add?date=${new Date().toISOString().split('T')[0]}`)}
-                        className="h-11 w-11 flex items-center justify-center rounded-xl text-white transition-all hover:brightness-110 hover:shadow-md active:scale-95 shadow-sm"
-                        style={{ backgroundColor: SAGE }}
+                        className="h-11 w-11 flex items-center justify-center rounded-xl text-white transition-all hover:brightness-110 hover:shadow-lg active:scale-95 shadow-sm bg-[#788069]"
                         title="Add Transaction"
                     >
                         <PlusCircle size={18} />
                     </button>
 
-                    <div className="flex items-center gap-2 border-l border-stone-200 pl-4 ml-1">
+                    <div className="flex items-center gap-2 border-l border-stone-100 pl-4 ml-1">
+                        <button 
+                            onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                            className={`h-11 w-11 flex items-center justify-center rounded-xl border border-stone-100 transition-all shadow-sm ${isCalendarOpen ? 'bg-[#788069] text-white' : 'bg-white text-stone-400 hover:text-[#788069] hover:bg-stone-50'}`}
+                            title={isCalendarOpen ? "Close Calendar" : "Open Calendar"}
+                        >
+                            <Calendar size={18} />
+                        </button>
                         <button 
                             onClick={handleExportExcel}
                             className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
                             title="Export to Excel"
                         >
-                            <Download size={18} />
+                            <Download size={16} />
                         </button>
                         <button 
                             onClick={handleExportPDF}
                             className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
                             title="Export to PDF"
                         >
-                            <FileText size={18} />
+                            <FileText size={16} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Section 1: Movement Grid */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* SECTION 1: MOVEMENT GRID */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard 
-                    accent={SAGE}
-                    icon={<LogIn size={18} />}
-                    label="Arrival Today" 
-                    count={dash || checkInCount}
-                    items={todayCheckIns}
-                    onItemClick={(b: any) => setSelectedGuest(b)}
+                    accent={SAGE} icon={<LogIn size={18} />} label="Check In Today" 
+                    count={dash || checkInCount} items={todayCheckIns}
+                    onItemClick={(b: any) => { setSelectedGuest(b); setIsEditing(false); }}
+                    onStatusUpdate={handleStatusUpdate}
                 />
                 <StatCard 
-                    accent={PEACH}
-                    icon={<Calendar size={18} />}
-                    label="Departure Today" 
-                    count={dash || checkOutCount}
-                    items={todayCheckOuts}
-                    onItemClick={(b: any) => setSelectedGuest(b)}
+                    accent={PEACH} icon={<Calendar size={18} />} label="Check Out Today" 
+                    count={dash || checkOutCount} items={todayCheckOuts}
+                    onItemClick={(b: any) => { setSelectedGuest(b); setIsEditing(false); }}
+                    onStatusUpdate={handleStatusUpdate}
                 />
                 <StatCard 
-                    accent="#ef4444"
-                    icon={<XCircle size={18} />}
-                    label="Cancellations" 
-                    count={dash || cancelCount}
-                    items={todayCanceled}
-                    onItemClick={(b: any) => setSelectedGuest(b)}
+                    accent="#ef4444" icon={<XCircle size={18} />} label="Cancellations" 
+                    count={dash || cancelCount} items={todayCanceled}
+                    onItemClick={(b: any) => { setSelectedGuest(b); setIsEditing(false); }}
+                    onStatusUpdate={handleStatusUpdate}
                 />
             </section>
 
-            {/* Bold Accent Divider */}
-            <div className="flex items-center justify-center gap-8 py-8">
-                <div className="h-[1px] bg-stone-100 flex-1" />
-                <div className="w-3 h-3 rounded-full border-4 border-stone-50 bg-sage/40" />
-                <div className="h-[1px] bg-stone-100 flex-1" />
-            </div>
+            {/* SECTION 2: AUDIT LEDGER */}
+            <AuditLedger 
+                bookings={latestBookings}
+                onView={(b) => { setSelectedGuest(b); setIsEditing(false); }}
+                onEdit={(b) => { setSelectedGuest(b); setIsEditing(true); }}
+                onDelete={(b) => setBookingToDelete(b)}
+                onStatusUpdate={handleStatusUpdate}
+                onExportExcel={handleExportExcel}
+                onExportPDF={handleExportPDF}
+            />
 
-            {/* Section 2: Audit Ledger */}
-            <section className="mt-20">
-                <div className="grid grid-cols-1 gap-12 items-start">
-                    {/* Audit Ledger Card */}
-                    <section 
-                        style={{ padding: '50px' }}
-                        className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
-                    >
-                        <div className="p-8 border-b border-stone-50 flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-sage text-white flex items-center justify-center rounded-xl">
-                                    <Activity size={18} />
-                                </div>
-                                <div>
-                                    <h2 className="text-[11px] font-bold text-stone-900 uppercase tracking-[0.2em] mb-0.5">Activity Register</h2>
-                                    <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">Transaction stream v2.1</p>
-                                </div>
-                            </div>
-                            <p className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">{latestBookings.length} Entries</p>
-                        </div>
-
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-stone-50/50">
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Guest Name</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Stay Period</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Room & Remarks</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Channel</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest">Financials</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest text-center">Status</th>
-                                    <th className="py-4 px-8 text-[9px] font-bold text-stone-400 uppercase tracking-widest text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {latestBookings.map((b, i) => (
-                                    <tr key={i} className="group hover:bg-stone-50/50 transition-all border-b border-stone-50 last:border-0">
-                                        <td className="py-6 px-8">
-                                            <p className="text-[12px] font-medium text-stone-800 uppercase font-outfit mb-1">{b.guestName || 'Sale'}</p>
-                                            <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{b.type === 'accommodation' ? 'Accommodation' : 'Service'}</p>
-                                        </td>
-                                        <td className="py-6 px-8">
-                                            <p className="text-[11px] font-medium text-stone-600 font-mono-jb mb-1">{b.checkInDate || '---'}</p>
-                                            <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">{b.checkOutDate || '---'}</p>
-                                        </td>
-                                        <td className="py-6 px-8 max-w-[200px]">
-                                            <p className="text-[11px] font-medium text-stone-800 uppercase font-outfit truncate">{b.roomType ? `${b.roomType} ${b.roomNumber ? `(${b.roomNumber})` : ''}` : '---'}</p>
-                                            <p className="text-[9px] font-bold text-stone-400 italic truncate mt-1 mb-2">{b.note || 'No internal remarks'}</p>
-                                            {b.type === 'accommodation' && (
-                                                <RoomStatusPicker 
-                                                    current={b.roomStatus || 'dirty'} 
-                                                    onChange={(val) => handleStatusUpdate(b, 'roomStatus', val)} 
-                                                />
-                                            )}
-                                        </td>
-                                        <td className="py-6 px-8">
-                                            <div className="flex justify-center items-center opacity-80 group-hover:opacity-100 transition-opacity">
-                                                <Image src={getChannelLogo(b.channel)} alt="" width={24} height={24} className="object-contain" />
-                                            </div>
-                                        </td>
-                                        <td className="py-6 px-8">
-                                            <p className="text-[13px] font-medium text-stone-900 font-mono-jb mb-1">Rp {Number(b.amount).toLocaleString('id-ID')}</p>
-                                            <p className="text-[8px] font-bold text-stone-300 uppercase tracking-widest">{b.paymentStatus || 'Settled'}</p>
-                                        </td>
-                                        <td className="py-6 px-8">
-                                            <div className="flex flex-col items-center gap-2">
-                                                {(() => {
-                                                    const statusText = (b.paymentStatus || "").toUpperCase();
-                                                    const mainStatus = (b.status || "").toUpperCase();
-                                                    let color = "text-sage";
-                                                    let label = "Lunas";
-
-                                                    if (mainStatus === 'CANCELLED') { color = "text-red-400"; label = "Cancelled"; }
-                                                    else if (statusText.includes('DP')) { color = "text-blue-400"; label = "Deposit"; }
-                                                    else if (statusText.includes('KURANG')) { color = "text-amber-500"; label = "Balance"; }
-
-                                                    return (
-                                                        <span className={`text-[8px] font-bold uppercase tracking-[0.1em] px-3 py-1 rounded-full bg-white border border-stone-100 ${color}`}>
-                                                            {label}
-                                                        </span>
-                                                    );
-                                                })()}
-                                                
-                                                {b.type === 'accommodation' && (
-                                                    <GuestStatusPicker 
-                                                        current={b.guestStatus || 'arriving'} 
-                                                        onChange={(val) => handleStatusUpdate(b, 'guestStatus', val)}
-                                                    />
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="py-6 px-8">
-                                            <div className="flex justify-center items-center gap-2">
-                                                <button onClick={(e) => { e.stopPropagation(); setSelectedGuest(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-stone-900 hover:bg-white transition-all"><Eye size={14} /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-blue-500 hover:bg-white transition-all"><Pencil size={14} /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(b); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-white transition-all"><Trash2 size={14} /></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    </section>
-                </div>
-            </section>
-
-            {/* Detail Folio */}
-            <AnimatePresence>
-                {selectedGuest && (
-                    <GuestDetailModal 
-                        guest={selectedGuest} 
-                        isEditing={isEditing}
-                        onClose={() => { setSelectedGuest(null); setIsEditing(false); }} 
+            {/* SECTION 3: INVENTORY CALENDAR */}
+            {isCalendarOpen && (
+                <section className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <InventoryCalendar 
+                        data={dailyData} 
+                        roomTypes={roomTypesData}
+                        totalRooms={roomStatus.total} 
+                        onDateSelect={(date) => router.push(`/forecast/add?date=${date}`)}
+                        onCellClick={(bookings, date, type) => setCalendarContext({ bookings, date, type })}
                     />
-                )}
+                </section>
+            )}
 
-                {/* Custom Themed Confirmation Modal */}
-                {bookingToDelete && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[300] bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4"
-                        onClick={() => setBookingToDelete(null)}
-                    >
-                        <motion.div 
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-[24px] p-8 max-w-md w-full shadow-2xl border border-stone-100"
-                        >
-                            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mb-6">
-                                <Trash2 size={20} />
-                            </div>
-                            <h3 className="text-xl font-bold text-stone-900 font-outfit uppercase tracking-tight mb-2">Confirm Deletion</h3>
-                            <p className="text-[11px] text-stone-500 uppercase tracking-widest leading-relaxed mb-8">
-                                Are you sure you want to permanently delete the transaction for <span className="font-bold text-stone-900">{bookingToDelete.guestName || bookingToDelete.incomeCategory}</span>? This action cannot be undone.
-                            </p>
-                            <div className="flex gap-4">
-                                <button 
-                                    onClick={() => setBookingToDelete(null)}
-                                    className="flex-1 h-12 rounded-xl border border-stone-200 text-[11px] font-bold text-stone-600 uppercase tracking-widest hover:bg-stone-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    onClick={executeDelete}
-                                    className="flex-1 h-12 rounded-xl bg-red-500 text-[11px] font-bold text-white uppercase tracking-widest hover:bg-red-600 transition-colors"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <GuestListDrawer 
+                isOpen={!!calendarContext}
+                onClose={() => setCalendarContext(null)}
+                date={calendarContext?.date || ""}
+                roomType={calendarContext?.type || ""}
+                bookings={calendarContext?.bookings || []}
+                onAdd={(date) => router.push(`/forecast/add?date=${date}`)}
+            />
+
+            {/* Modals */}
+            {selectedGuest && (
+                <GuestDetailModal 
+                    guest={selectedGuest} 
+                    isEditing={isEditing} 
+                    onClose={() => setSelectedGuest(null)} 
+                />
+            )}
+
+            <DeleteConfirmModal 
+                isOpen={!!bookingToDelete}
+                itemName={bookingToDelete?.guestName || "General Sale"}
+                onConfirm={executeDelete}
+                onCancel={() => setBookingToDelete(null)}
+            />
         </div>
     );
-};
+}
