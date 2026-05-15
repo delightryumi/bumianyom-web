@@ -94,7 +94,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
                     <footer className="dashboard-footer-clean">
                         <a
-                            href={poweredByLink || "https://nexuragroups.com"}
+                            href={poweredByLink?.startsWith('http') ? poweredByLink : `https://${poweredByLink || "nexuragroups.com"}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="powered-by-link"

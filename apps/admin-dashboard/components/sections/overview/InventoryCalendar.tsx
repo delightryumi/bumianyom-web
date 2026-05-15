@@ -41,33 +41,36 @@ export function InventoryCalendar({
     const handleToday = () => setViewDate(new Date());
 
     return (
-        <div className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden mb-12">
+        <div className="bg-white rounded-xl border border-stone-100 shadow-xl overflow-hidden mb-12">
             {/* Header - Sage Aesthetic */}
-            <div className="p-6 md:p-8 border-b border-stone-50 flex flex-col md:flex-row justify-between items-center gap-6 bg-stone-50/20">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-[#788069] text-white flex items-center justify-center rounded-xl shadow-lg shadow-[#788069]/20">
-                        <CalendarIcon size={18} />
+            <div className="p-6 md:p-12 border-b border-stone-50 flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-stone-50/10">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3.5 mb-1">
+                        <div className="w-7 h-7 rounded-md flex items-center justify-center bg-[#788069] text-white">
+                            <CalendarIcon size={13} />
+                        </div>
+                        <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-stone-400">Nexura Operational</span>
                     </div>
-                    <div>
-                        <h2 className="text-[11px] font-bold text-stone-900 uppercase tracking-[0.2em] mb-0.5">Inventory Control</h2>
-                        <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">Real-time Allotment Sync</p>
-                    </div>
+                    <h2 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+                        Inventory <span style={{ color: '#788069' }}>Control</span>
+                    </h2>
+                    <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest mt-1">Real-time Allotment Sync</p>
                 </div>
 
-                <div className="flex items-center gap-4 bg-white p-1.5 rounded-xl border border-stone-100 shadow-sm">
-                    <button onClick={handlePrevMonth} className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all">
+                <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-stone-100 shadow-sm">
+                    <button onClick={handlePrevMonth} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-xl transition-all">
                         <ChevronLeft size={16} />
                     </button>
-                    <div className="px-4 text-center min-w-[140px]">
-                        <p className="text-[10px] font-bold text-stone-900 uppercase tracking-widest font-outfit">
+                    <div className="px-6 text-center min-w-[160px]">
+                        <p className="text-[11px] font-bold text-stone-900 uppercase tracking-[0.15em] font-outfit">
                             {format(viewDate, 'MMMM yyyy')}
                         </p>
                     </div>
-                    <button onClick={handleNextMonth} className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all">
+                    <button onClick={handleNextMonth} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-xl transition-all">
                         <ChevronRight size={18} />
                     </button>
-                    <div className="w-[1px] h-4 bg-stone-100 mx-1" />
-                    <button onClick={handleToday} className="px-4 py-1.5 text-[9px] font-bold text-[#788069] uppercase tracking-widest hover:bg-[#788069]/5 rounded-lg transition-all">
+                    <div className="w-[1px] h-5 bg-stone-100 mx-2" />
+                    <button onClick={handleToday} className="px-5 py-2 text-[10px] font-bold text-[#788069] uppercase tracking-widest hover:bg-[#788069]/5 rounded-xl transition-all">
                         Today
                     </button>
                 </div>

@@ -29,7 +29,7 @@ export function StatCard({ icon, label, count, accent, items = [], onItemClick, 
             whileHover={{ y: -8, scale: 1.01 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             style={{ }}
-            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl hover:shadow-2xl hover:shadow-stone-200/50 flex flex-col gap-6 cursor-default transition-all duration-300"
+            className="bg-white p-6 md:p-8 lg:p-12 rounded-xl border border-stone-100 shadow-xl hover:shadow-2xl hover:shadow-stone-200/50 flex flex-col gap-6 cursor-default transition-all duration-300"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -46,8 +46,8 @@ export function StatCard({ icon, label, count, accent, items = [], onItemClick, 
 
             <div className="space-y-4">
                 {items.length === 0 ? (
-                    <div className="py-8 border border-dashed border-stone-100 rounded-2xl flex items-center justify-center">
-                        <p className="text-[9px] font-bold text-stone-200 uppercase tracking-widest">No activity</p>
+                    <div className="py-4 flex items-center justify-center bg-stone-50/50 rounded-2xl border border-stone-50">
+                        <p className="text-[10px] font-bold text-stone-300 uppercase tracking-widest">No activity</p>
                     </div>
                 ) : (
                     items.slice(0, 5).map((item: any, idx: number) => (

@@ -26,26 +26,50 @@ export function AuditLedger({
 }: AuditLedgerProps) {
     return (
         <section 
-            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+            className="bg-white p-6 md:p-8 lg:p-12 rounded-xl border border-stone-100 shadow-xl overflow-hidden"
         >
-            <div className="p-4 md:p-8 border-b border-stone-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-[#788069] text-white flex items-center justify-center rounded-xl">
-                        <Activity size={18} />
+            <div className="p-6 md:p-12 border-b border-stone-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3.5 mb-1">
+                        <div className="w-7 h-7 rounded-md flex items-center justify-center bg-[#ffd8a6] text-[#788069]">
+                            <Activity size={13} />
+                        </div>
+                        <span className="text-[10px] font-medium uppercase tracking-[0.25em] text-stone-400">Nexura Operational</span>
                     </div>
-                    <div>
-                        <h2 className="text-[11px] font-bold text-stone-900 uppercase tracking-[0.2em] mb-0.5">Detail Transaksi Hari Ini</h2>
-                        <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">Laporan Aktivitas Harian Operasional</p>
-                    </div>
+                    <h2 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
+                        Detail <span style={{ color: '#788069' }}>Transaksi</span>
+                    </h2>
+                    <p className="text-[9px] font-bold text-stone-300 uppercase tracking-widest mt-1">Laporan Aktivitas Harian Operasional</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <p className="text-[10px] font-bold text-stone-300 uppercase tracking-widest mr-4">{bookings.length} Entries</p>
-                    <button onClick={onExportExcel} className="h-9 w-9 flex items-center justify-center rounded-lg bg-stone-50 text-stone-400 hover:text-emerald-600 transition-all border border-stone-100"><Download size={14} /></button>
-                    <button onClick={onExportPDF} className="h-9 w-9 flex items-center justify-center rounded-lg bg-stone-50 text-stone-400 hover:text-rose-600 transition-all border border-stone-100"><FileText size={14} /></button>
+
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end mr-4 border-r border-stone-100 pr-6 hidden sm:flex">
+                        <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest mb-1">Ledger Status</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-stone-800 uppercase tracking-wider">{bookings.length} Active Entries</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={onExportExcel} 
+                            className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+                            title="Export to Excel"
+                        >
+                            <Download size={16} />
+                        </button>
+                        <button 
+                            onClick={onExportPDF} 
+                            className="h-11 w-11 flex items-center justify-center rounded-xl bg-white border border-stone-100 text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm"
+                            title="Export to PDF"
+                        >
+                            <FileText size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="overflow-x-auto custom-scrollbar">
+            <div className="overflow-x-auto custom-scrollbar pt-6">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="border-b border-stone-50">

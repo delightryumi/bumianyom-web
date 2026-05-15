@@ -39,6 +39,9 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --font-outfit: "Outfit", sans-serif;
+  --font-mono-jb: "JetBrains Mono", monospace;
 }
 
 * {

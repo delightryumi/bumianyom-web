@@ -27,6 +27,33 @@ export const CHANNELS = [
     { name: "Booking Engine", color: SAGE, logo: "/channels/nexura.png" },
 ];
 
+export const OTHER_INCOME_TYPES = [
+    "Breakfast",
+    "Meeting Room",
+    "F&B (Restaurant/Cafe)",
+    "Laundry",
+    "Spa & Massage",
+    "Transportation / Pickup",
+    "Extra Bed",
+    "Other Income"
+];
+
+const INITIAL_FORM = {
+    guestName: "",
+    checkIn: "",
+    checkOut: "",
+    rooms: [{ roomTypeId: "", roomNumber: "", price: "" }],
+    nightRates: [""] as any[],
+    channel: "Walk-in",
+    voucherCode: "",
+    payHotel: "",
+    payNexura: "",
+    totalAmount: "",
+    incomeType: "other",
+    note: "",
+    staffName: ""
+};
+
 export const useTransactionForm = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -37,40 +64,42 @@ export const useTransactionForm = () => {
     const [saving, setSaving] = useState(false);
     const [step, setStep] = useState<"type" | "form">("type");
     const [revenueType, setRevenueType] = useState<"room" | "other">("room");
+    const [queue, setQueue] = useState<any[]>([]);
     
     const [form, setForm] = useState({
-        guestName: "",
-        checkIn: selectedDate,
-        checkOut: "",
-        rooms: [{ roomTypeId: "", roomNumber: "", price: "" }], // Array for multiple rooms
-        channel: "Walk-in",
-        voucherCode: "",
-        paidAmount1: "",
-        paidAmount2: "",
-        paymentMethod: "Pay at Hotel" as "Pay at Hotel" | "Pay at Nexura",
-        isSplitBill: false,
-        incomeType: "Breakfast",
-        totalAmount: "", // Used for other revenue
-        note: "",
-        staffName: ""
+        ...INITIAL_FORM,
+        checkIn: selectedDate
     });
 
+    const start = form.checkIn ? new Date(form.checkIn) : null;
+    const end = form.checkOut ? new Date(form.checkOut) : null;
+    const nights = (start && end && end > start) ? Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) : 1;
+
+    const totalGross = revenueType === "room" 
+        ? (form.nightRates || []).reduce((acc, r) => acc + (Number(r) || 0), 0)
+        : (Number(form.totalAmount) || 0);
+        
+    const balance = totalGross - (Number(form.payHotel) || 0) - (Number(form.payNexura) || 0);
+
     useEffect(() => {
-        if (revenueType === "room" && !(form.channel === "Walk-in" || form.channel === "Nexura Sales")) {
-            setForm(prev => ({ ...prev, paymentMethod: "Pay at Nexura", isSplitBill: false }));
+        const isRestricted = !(form.channel === "Walk-in" || form.channel === "Nexura Sales");
+        if (revenueType === "room" && isRestricted) {
+            setForm(prev => ({ 
+                ...prev, 
+                payHotel: "0",
+                payNexura: totalGross.toString()
+            }));
         }
-    }, [form.channel, revenueType]);
+    }, [form.channel, revenueType, totalGross]);
 
     // Fetch Allotment & Current Bookings
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Get Room Types (Total Allotment)
                 const rSnap = await getDocs(collection(db, "roomTypes"));
                 const types = rSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 setRoomTypes(types);
 
-                // 2. Get Existing Bookings for availability check
                 const bSnap = await getDocs(collection(db, "daily_revenue"));
                 const bookings = bSnap.docs.flatMap(d => d.data().entries || []);
                 setOccupancy(bookings);
@@ -81,15 +110,22 @@ export const useTransactionForm = () => {
         fetchData();
     }, []);
 
-    const start = form.checkIn ? new Date(form.checkIn) : null;
-    const end = form.checkOut ? new Date(form.checkOut) : null;
-    const nights = (start && end && end > start) ? Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) : 1;
+    // Sync nightRates with nights
+    useEffect(() => {
+        if (revenueType === "room") {
+            const currentPrice = form.rooms[0]?.price || "";
+            const newRates = Array(nights).fill(currentPrice);
+            setForm(prev => ({ ...prev, nightRates: newRates }));
+        }
+    }, [nights, revenueType]);
 
-    const grandTotal = revenueType === "room" 
-        ? form.rooms.reduce((acc, r) => acc + (Number(r.price) || 0), 0) * nights
-        : (Number(form.totalAmount) || 0);
-        
-    const balance = grandTotal - (Number(form.paidAmount1) || 0) - (form.isSplitBill ? (Number(form.paidAmount2) || 0) : 0);
+    const updateNightRate = (idx: number, val: string | number) => {
+        setForm(prev => {
+            const newRates = [...(prev.nightRates || [])];
+            newRates[idx] = val;
+            return { ...prev, nightRates: newRates };
+        });
+    };
 
     const isAvailable = useCallback(() => {
         if (revenueType !== "room" || !form.checkIn || !form.checkOut) return true;
@@ -152,99 +188,155 @@ export const useTransactionForm = () => {
         });
     };
 
-    const handleSubmit = useCallback(async () => {
+    const prepareEntries = useCallback(() => {
         const isRoom = revenueType === "room";
         
         // 1. Core Validation
         if (isRoom) {
-            if (!form.guestName) { toast.error("Guest Name is required"); return; }
-            if (!form.checkOut) { toast.error("Check-out Date is required"); return; }
-            if (form.rooms.some(r => !r.roomTypeId)) { toast.error("Please select a category for all rooms"); return; }
-            if (form.rooms.some(r => !r.price || Number(r.price) <= 0)) { toast.error("Please enter a valid price for all rooms"); return; }
+            if (!form.guestName) { toast.error("Guest Nama is required"); return null; }
+            if (!form.checkOut) { toast.error("Check-out Date is required"); return null; }
         } else {
-            if (!form.totalAmount || Number(form.totalAmount) <= 0) { toast.error("Total Amount is required"); return; }
-        }
-
-        if (form.isSplitBill && balance !== 0) {
-            toast.error(`Payment balance mismatch: Rp ${new Intl.NumberFormat('id-ID').format(balance)} remaining`);
-            return;
+            if (!form.totalAmount || Number(form.totalAmount) <= 0) { toast.error("Total Amount is required"); return null; }
         }
 
         if (isRoom && !isAvailable()) {
             toast.error("Requested room types are sold out for these dates");
+            return null;
+        }
+
+        let transactionEntries: any[] = [];
+
+        if (revenueType === "room") {
+            const entryAmount = totalGross;
+
+            transactionEntries = [{
+                type: "accommodation",
+                guestName: form.guestName,
+                checkInDate: form.checkIn,
+                checkOutDate: form.checkOut,
+                roomType: roomTypes.find(rt => rt.id === form.rooms[0].roomTypeId)?.name || "",
+                roomNumber: form.rooms[0].roomNumber,
+                roomCount: 1,
+                nights: nights,
+                channel: form.channel,
+                voucherCode: form.voucherCode,
+                amount: totalGross,
+                payHotel: Number(form.payHotel) || 0,
+                payNexura: Number(form.payNexura) || 0,
+                paidCash: Number(form.payHotel) || 0,
+                paidAmount1: Number(form.payHotel) || 0,
+                paidTransfer: Number(form.payNexura) || 0,
+                paidAmount2: Number(form.payNexura) || 0,
+                paymentStatus: balance === 0 ? "PAID" : "UNPAID",
+                source: (form.channel === "Walk-in" || form.channel === "Nexura Sales" || form.channel === "Booking Engine") ? "Walk-in" : "OTA",
+                status: "CONFIRMED",
+                staffName: form.staffName,
+                note: form.note,
+                timestamp: new Date().toISOString()
+            }];
+        } else {
+            transactionEntries = [{
+                type: "other_income",
+                guestName: form.guestName, // This stores the description for other income
+                incomeCategory: form.incomeType,
+                note: form.note,
+                staffName: form.staffName || "System",
+                checkInDate: form.checkIn,
+                checkOutDate: form.checkIn,
+                amount: Number(form.totalAmount),
+                payHotel: Number(form.payHotel) || 0,
+                payNexura: Number(form.payNexura) || 0,
+                paidCash: Number(form.payHotel) || 0,
+                paidAmount1: Number(form.payHotel) || 0,
+                paidTransfer: Number(form.payNexura) || 0,
+                paidAmount2: Number(form.payNexura) || 0,
+                paymentStatus: balance === 0 ? "PAID" : "UNPAID",
+                source: "Walk-in", // Other income is generally considered walk-in
+                status: "CONFIRMED",
+                timestamp: new Date().toISOString()
+            }];
+        }
+
+        return transactionEntries;
+    }, [form, revenueType, balance, isAvailable, nights, roomTypes, totalGross]);
+
+    const addToQueue = () => {
+        const entries = prepareEntries();
+        if (entries) {
+            setQueue(prev => [...prev, ...entries]);
+            // Reset form but keep date and type
+            setForm(prev => ({
+                ...INITIAL_FORM,
+                checkIn: prev.checkIn,
+                staffName: prev.staffName,
+                incomeType: prev.incomeType
+            }));
+            toast.success("Added to queue");
+        }
+    };
+
+    const removeFromQueue = (index: number) => {
+        setQueue(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const commitTransactions = useCallback(async () => {
+        let finalEntries = [...queue];
+
+        // If form is dirty and queue is empty, or user just wants to process current form
+        const isFormDirty = form.guestName.trim() !== "" || (revenueType === 'other' && Number(form.totalAmount) > 0);
+        
+        if (isFormDirty) {
+            const currentEntries = prepareEntries();
+            if (currentEntries) {
+                finalEntries = [...finalEntries, ...currentEntries];
+            } else if (queue.length === 0) {
+                return; // Validation failed and nothing in queue
+            }
+        }
+
+        if (finalEntries.length === 0) {
+            toast.error("Queue is empty and form is not filled.");
             return;
         }
 
         setSaving(true);
         try {
-            const hotelId = "bumi-anyom-resort";
-            const dateStr = form.checkIn;
-            const docId = `${hotelId}_${dateStr}`;
-            
-            let transactionEntries: any[] = [];
+            // Group entries by date to save to correct documents
+            const entriesByDate: Record<string, any[]> = {};
+            finalEntries.forEach(entry => {
+                const date = entry.checkInDate;
+                if (!entriesByDate[date]) entriesByDate[date] = [];
+                entriesByDate[date].push(entry);
+            });
 
-            if (revenueType === "room") {
-                transactionEntries = form.rooms.map(room => ({
-                    type: "accommodation",
-                    guestName: form.guestName,
-                    checkInDate: form.checkIn,
-                    checkOutDate: form.checkOut,
-                    roomType: roomTypes.find(rt => rt.id === room.roomTypeId)?.name || "",
-                    roomNumber: room.roomNumber,
-                    roomCount: 1, // Default 1 per entry
-                    nights: nights,
-                    channel: form.channel,
-                    voucherCode: form.voucherCode,
-                    amount: Number(room.price) * nights,
-                    paidAmount1: (Number(form.paidAmount1) + (form.isSplitBill ? Number(form.paidAmount2) : 0)) / form.rooms.length, // Pro-rated payment
-                    paymentStatus: form.paymentMethod,
-                    isSplitBill: form.isSplitBill,
-                    source: (form.channel === "Walk-in" || form.channel === "Nexura Sales" || form.channel === "Booking Engine") ? "Walk-in" : "OTA",
-                    status: "CONFIRMED",
-                    staffName: form.staffName,
-                    note: form.note,
-                    timestamp: new Date().toISOString()
-                }));
-            } else {
-                transactionEntries = [{
-                    type: "other_income",
-                    incomeCategory: form.incomeType,
-                    note: form.note,
-                    staffName: form.staffName || "System",
-                    checkInDate: form.checkIn,
-                    checkOutDate: form.checkIn,
-                    amount: Number(form.totalAmount),
-                    paidAmount1: Number(form.paidAmount1),
-                    paymentStatus: form.paymentMethod,
-                    status: "CONFIRMED",
-                    timestamp: new Date().toISOString()
-                }];
+            for (const [dateStr, transactionEntries] of Object.entries(entriesByDate)) {
+                const hotelId = "bumi-anyom-resort";
+                const docId = `${hotelId}_${dateStr}`;
+                const docRef = doc(db, "daily_revenue", docId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    await updateDoc(docRef, { 
+                        entries: arrayUnion(...transactionEntries),
+                        date: dateStr
+                    });
+                } else {
+                    await setDoc(docRef, { 
+                        entries: transactionEntries,
+                        date: dateStr
+                    });
+                }
             }
 
-            const docRef = doc(db, "daily_revenue", docId);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                await updateDoc(docRef, { 
-                    entries: arrayUnion(...transactionEntries),
-                    date: dateStr
-                });
-            } else {
-                await setDoc(docRef, { 
-                    entries: transactionEntries,
-                    date: dateStr
-                });
-            }
-
-            toast.success("Transaction synchronized successfully");
-            router.push("/forecast");
+            toast.success("All transactions synchronized successfully");
+            router.push("/overview");
         } catch (err) {
             console.error(err);
             toast.error("Synchronization failed.");
         } finally {
             setSaving(false);
         }
-    }, [form, roomTypes, balance, router, revenueType]);
+    }, [form, queue, prepareEntries, router, revenueType]);
 
     const updateForm = (field: string, value: any) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -257,16 +349,20 @@ export const useTransactionForm = () => {
         step,
         revenueType,
         balance,
-        grandTotal,
+        totalGross,
         nights,
         setStep,
         setRevenueType,
         updateForm,
+        updateNightRate,
         addRoom,
         removeRoom,
         updateRoom,
-        handleSubmit,
         isAvailable,
-        router
+        router,
+        queue,
+        addToQueue,
+        removeFromQueue,
+        commitTransactions
     };
 };

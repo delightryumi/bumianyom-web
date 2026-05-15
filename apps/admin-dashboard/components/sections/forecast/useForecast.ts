@@ -20,6 +20,7 @@ export interface ForecastStats {
 }
 
 export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDate: string) => {
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [stats, setStats] = useState<ForecastStats>({
         totalGrossRevenue: 0,
         salesPayAtNexura: 0,
@@ -59,22 +60,19 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
             let trendMode: 'days' | 'months' | 'years' = 'days';
 
             if (viewMode === "daily") {
-                // For Daily view, we want a trend of the current month
                 startStr = `${year}-${month}-01`;
                 const daysInMonth = new Date(Number(year), Number(month), 0).getDate();
                 endStr = `${year}-${month}-${String(daysInMonth).padStart(2, '0')}`;
-                totalDaysForOcc = 1; // We'll handle individual days in trend
+                totalDaysForOcc = 1; 
                 trendMode = 'days';
                 for(let i=1; i<=daysInMonth; i++) trendLabels.push(String(i));
             } else if (viewMode === "monthly") {
-                // For Monthly view, we want trend of the current year
                 startStr = `${year}-01-01`;
                 endStr = `${year}-12-31`;
                 totalDaysForOcc = new Date(Number(year), Number(month), 0).getDate();
                 trendMode = 'months';
                 trendLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             } else {
-                // For Yearly view, we want trend of available years
                 startStr = `2024-01-01`;
                 endStr = `2030-12-31`;
                 totalDaysForOcc = (Number(year) % 4 === 0 && (Number(year) % 100 !== 0 || Number(year) % 400 === 0)) ? 366 : 365;
@@ -88,13 +86,12 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
             let gross = 0, walkin = 0, ota = 0, other = 0, nexura = 0, hotel = 0, roomsSold = 0, roomRevenue = 0;
             let currentEntries: any[] = [];
             
-            // Trend Buckets
             const buckets: Record<string, any> = {};
             trendLabels.forEach(l => buckets[l] = { gross: 0, roomRev: 0, sold: 0 });
 
             snap.forEach(d => {
                 const data = d.data();
-                const date = data.date || ""; // YYYY-MM-DD
+                const date = data.date || ""; 
                 const [dY, dM, dD] = date.split('-');
                 
                 let label = "";
@@ -111,7 +108,6 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
                         const amount = Number(e.amount) || 0;
                         const isAcc = e.type === "accommodation" || (!e.type && e.guestName);
 
-                        // Update Trend
                         if (buckets[label]) {
                             buckets[label].gross += amount;
                             if (isAcc) {
@@ -120,7 +116,6 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
                             }
                         }
 
-                        // Update Current Totals
                         if (isCurrent) {
                             gross += amount;
                             if (e.type === "other_income") other += amount;
@@ -129,8 +124,18 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
                                 else if (e.source === "OTA") ota += amount;
                                 else other += amount;
                             }
-                            if (e.paymentStatus === "Pay at Nexura") nexura += amount;
-                            if (e.paymentStatus === "Pay at Hotel") hotel += amount;
+
+                            const cashAmt = Number(e.payHotel || e.paidCash || e.paidAmount1 || 0);
+                            const digitalAmt = Number(e.payNexura || e.paidTransfer || e.paidAmount2 || 0);
+                            
+                            if (cashAmt > 0 || digitalAmt > 0) {
+                                hotel += cashAmt;
+                                nexura += digitalAmt;
+                            } else {
+                                if (e.paymentStatus === "Pay at Nexura") nexura += amount;
+                                if (e.paymentStatus === "Pay at Hotel") hotel += amount;
+                            }
+
                             if (isAcc) {
                                 roomsSold += 1;
                                 roomRevenue += amount;
@@ -141,24 +146,17 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
                 });
             });
 
-            // Calculate Trend Data
             const trendData = trendLabels.map(label => {
                 const b = buckets[label];
                 const daysInBucket = trendMode === 'days' ? 1 : 
                                      trendMode === 'months' ? new Date(Number(year), trendLabels.indexOf(label)+1, 0).getDate() :
-                                     365; // approximation for years
+                                     365;
                 
                 const occ = (totalPhysicalRooms * daysInBucket) > 0 ? (b.sold / (totalPhysicalRooms * daysInBucket)) * 100 : 0;
                 const arr = b.sold > 0 ? b.roomRev / b.sold : 0;
                 const revPar = (totalPhysicalRooms * daysInBucket) > 0 ? b.roomRev / (totalPhysicalRooms * daysInBucket) : 0;
 
-                return {
-                    label,
-                    gross: b.gross,
-                    occ,
-                    arr,
-                    revPar
-                };
+                return { label, gross: b.gross, occ, arr, revPar };
             });
 
             const totalPossibleRoomNights = totalPhysicalRooms * totalDaysForOcc;
@@ -180,7 +178,7 @@ export const useForecast = (viewMode: "daily" | "monthly" | "yearly", selectedDa
         };
 
         fetchData();
-    }, [viewMode, selectedDate]);
+    }, [viewMode, selectedDate, refreshTrigger]);
 
-    return stats;
+    return { ...stats, refresh: () => setRefreshTrigger(prev => prev + 1) };
 };

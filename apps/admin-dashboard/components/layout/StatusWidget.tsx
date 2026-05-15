@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { Clock, Calendar, Wifi, ArrowLeft, Sparkles, PlusCircle, Menu, User as UserIcon, Maximize2, Minimize2 } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Clock, Calendar, Wifi, ArrowLeft, Sparkles, Menu, User as UserIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { FullscreenToggle } from "./FullscreenToggle";
 
 /* ── Brand Colors ── */
-const SAGE = "#788069";
+const SAGE = "#8B9D83";
 
 interface StatusWidgetProps {
     onMenuClick?: () => void;
@@ -15,54 +15,29 @@ interface StatusWidgetProps {
     onToggleSidebar?: () => void;
 }
 
-export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: StatusWidgetProps) => {
+export const StatusWidget = ({ onMenuClick }: StatusWidgetProps) => {
     const pathname = usePathname();
     const router = useRouter();
     const { user } = useAuth();
     const [time, setTime] = useState(new Date());
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    
+
     const userName = user?.displayName || user?.email?.split('@')[0] || "Administrator";
 
     useEffect(() => {
+        // Clock Timer
         const timer = setInterval(() => setTime(new Date()), 1000);
-        
-        const handleFsChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
-        };
-        document.addEventListener('fullscreenchange', handleFsChange);
 
         return () => {
             clearInterval(timer);
-            document.removeEventListener('fullscreenchange', handleFsChange);
         };
     }, []);
 
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable fullscreen: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-    };
-
     const formatTime = (date: Date) => {
-        return date.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-        });
+        return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
     };
 
     const formatDate = (date: Date) => {
-        return date.toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
+        return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     };
 
     const getGreeting = () => {
@@ -72,14 +47,14 @@ export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: Stat
         return "Good Evening";
     };
 
-    // Special Header for Add Transaction Page (Navigation only, Publish moved to sidebar)
+    // Special Header for Add Transaction Page
     if (pathname === "/forecast/add") {
         return (
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full relative z-50">
                 <div className="flex items-center gap-6">
                     <button
                         onClick={() => router.push("/overview")}
-                        className="flex items-center gap-2.5 text-stone-400 hover:text-stone-900 transition-colors group"
+                        className="flex items-center gap-2.5 text-stone-400 hover:text-stone-900 transition-colors group cursor-pointer"
                     >
                         <div className="w-8 h-8 rounded-full flex items-center justify-center border border-stone-100 group-hover:bg-stone-50 transition-all">
                             <ArrowLeft size={14} />
@@ -104,22 +79,25 @@ export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: Stat
                             <span className="text-[10px] font-bold text-stone-800 uppercase tracking-wider">Live Synchronization</span>
                         </div>
                     </div>
+
+                    <div className="h-10 w-px bg-stone-100/50 hidden md:block" />
+
+                    <FullscreenToggle variant="light" />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="status-widget-container relative flex items-center justify-between w-full">
+        <div className="status-widget-container relative flex items-center justify-between w-full z-50">
             <div className="flex items-center gap-3 min-w-0">
-                <button 
+                <button
                     onClick={onMenuClick}
-                    className="lg:hidden p-2 -ml-2 text-stone-300 hover:text-white transition-colors flex-shrink-0"
+                    className="lg:hidden p-2 -ml-2 text-stone-300 hover:text-white transition-colors flex-shrink-0 cursor-pointer"
                 >
                     <Menu size={22} />
                 </button>
-                
-                {/* Left Side: Greeting on Top, Time/Date Stacked Below */}
+
                 <div className="flex flex-col gap-1 min-w-0">
                     <div className="mb-0.5">
                         <span className="greeting-text text-[9px] sm:text-[11px] whitespace-nowrap text-white">{getGreeting()}</span>
@@ -138,23 +116,21 @@ export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: Stat
                 </div>
             </div>
 
-            {/* Center: Nexura Branding Logo */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2">
-                <img 
-                    src="/channels/nexura-logo.png" 
-                    alt="Nexura Logo" 
-                    className="h-18 w-auto object-contain opacity-100 transition-opacity cursor-default"
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 pointer-events-none">
+                <img
+                    src="/channels/nexura-logo.png"
+                    alt="Nexura Logo"
+                    className="h-18 w-auto object-contain opacity-100 transition-opacity"
                 />
             </div>
 
-            {/* Right Side: Identity & Status Stack */}
             <div className="flex items-center gap-6 flex-shrink-0">
                 <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-2 px-1 py-1">
                         <UserIcon size={10} className="text-peach" />
                         <span className="text-[9px] sm:text-[10px] font-bold text-white whitespace-nowrap">{userName}</span>
                     </div>
-                    
+
                     <div className="system-status flex items-center gap-2 sm:gap-4">
                         <div className="flex items-center gap-2 px-1">
                             <div className="pulse-dot w-1.5 h-1.5 sm:w-2 sm:h-2" />
@@ -164,17 +140,7 @@ export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: Stat
                     </div>
                 </div>
 
-                {/* Far Right: Full View Toggle (Center Piece) */}
-                <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={toggleFullscreen}
-                    className="hidden lg:flex items-center justify-center w-11 h-11 bg-emerald-400/10 border border-emerald-400/20 rounded-xl text-emerald-400 hover:bg-emerald-400/20 transition-all shadow-md relative overflow-hidden group"
-                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                >
-                    <div className="absolute inset-0 bg-emerald-400/20 animate-ping opacity-40 pointer-events-none" />
-                    {isFullscreen ? <Minimize2 size={18} className="relative z-10" /> : <Maximize2 size={18} className="relative z-10" />}
-                </motion.button>
+                <FullscreenToggle variant="dark" />
             </div>
         </div>
     );

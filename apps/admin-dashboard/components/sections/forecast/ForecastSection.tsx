@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import {
     Waves,
     Wallet,
@@ -113,7 +114,7 @@ export const ForecastSection: React.FC = () => {
             toast.error("Failed to delete transaction");
         } finally {
             setBookingToDelete(null);
-            if (onDateChange) onDateChange(selectedDate); // Trigger refresh if available
+            stats.refresh(); // Correctly trigger refresh using hook's internal state
         }
     };
 

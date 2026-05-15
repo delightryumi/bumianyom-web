@@ -246,20 +246,72 @@
 }
 
 .dashboard-top-bar {
-    padding: 12px 40px;
-    background: linear-gradient(180deg, rgba(30, 30, 30, 0.35) 0%, rgba(10, 10, 10, 0.5) 100%);
-    backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 1px solid rgba(255, 255, 255, 0.03);
-    border-right: 1px solid rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 24px;
-    margin: 12px 24px 0 24px;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, rgba(35, 35, 35, 0.7) 0%, rgba(15, 15, 15, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 32px;
+    margin: 16px 24px 0 24px;
     z-index: 30;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
     box-shadow: 
-        0 15px 35px rgba(0, 0, 0, 0.25),
-        0 5px 15px rgba(0, 0, 0, 0.1);
+        0 10px 30px -5px rgba(0, 0, 0, 0.3),
+        0 20px 50px -10px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-top-bar:hover {
+    transform: translateY(-2px) scale(1.002);
+    background: linear-gradient(135deg, rgba(40, 40, 40, 0.75) 0%, rgba(20, 20, 20, 0.9) 100%);
+    box-shadow: 
+        0 15px 40px -5px rgba(0, 0, 0, 0.4),
+        0 30px 70px -15px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Animated Shine Effect */
+.dashboard-top-bar::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 45%,
+        rgba(255, 255, 255, 0.03) 48%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 52%,
+        transparent 55%
+    );
+    transform: rotate(-25deg);
+    animation: luxury-shine 8s infinite ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes luxury-shine {
+    0% { left: -100%; opacity: 0; }
+    10% { opacity: 1; }
+    40% { left: 100%; opacity: 1; }
+    50%, 100% { left: 100%; opacity: 0; }
+}
+
+/* Luxury Grain Overlay for Depth */
+.dashboard-top-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+    mix-blend-mode: overlay;
 }
 
 .main-scroll-container {
@@ -623,6 +675,11 @@
     background: inherit;
     opacity: 0.4;
     animation: pulse-small 2s infinite;
+}
+
+/* Full Window Mode - Keep Layout Identical */
+body.full-window-mode .main-scroll-container {
+    /* No changes needed to keep it identical */
 }
 
 @keyframes pulse-small {
