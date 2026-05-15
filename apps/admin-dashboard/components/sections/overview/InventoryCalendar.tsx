@@ -43,7 +43,7 @@ export function InventoryCalendar({
     return (
         <div className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden mb-12">
             {/* Header - Sage Aesthetic */}
-            <div className="p-8 border-b border-stone-50 flex flex-col md:flex-row justify-between items-center gap-6 bg-stone-50/20">
+            <div className="p-6 md:p-8 border-b border-stone-50 flex flex-col md:flex-row justify-between items-center gap-6 bg-stone-50/20">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-[#788069] text-white flex items-center justify-center rounded-xl shadow-lg shadow-[#788069]/20">
                         <CalendarIcon size={18} />
@@ -143,7 +143,7 @@ export function InventoryCalendar({
                                                     </p>
                                                     {occupied > 0 && <Users size={8} className="text-stone-300" />}
                                                 </div>
-                                                <div className="w-8 h-1 bg-stone-100 rounded-full overflow-hidden">
+                                                <div className="w-8 h-[2px] bg-stone-100 rounded-full overflow-hidden">
                                                     <div 
                                                         className={`h-full transition-all duration-700 ${isSoldOut ? 'bg-rose-400' : 'bg-emerald-400'}`} 
                                                         style={{ width: `${(available / type.allotment) * 100}%` }} 

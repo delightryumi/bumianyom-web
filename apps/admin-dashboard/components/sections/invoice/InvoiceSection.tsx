@@ -234,7 +234,7 @@ export const InvoiceSection = () => {
                                                         placeholder="e.g. Deluxe Room Stay"
                                                     />
                                                 </div>
-                                                <div className="col-span-4 lg:col-span-2">
+                                                <div className="col-span-6 lg:col-span-2">
                                                     <label className="item-input-label text-center">Qty</label>
                                                     <input 
                                                         type="number" 
@@ -252,12 +252,13 @@ export const InvoiceSection = () => {
                                                         className="item-input text-right"
                                                     />
                                                 </div>
-                                                <div className="col-span-2 lg:col-span-1 flex justify-end pb-2">
+                                                <div className="col-span-12 lg:col-span-1 flex justify-end lg:pb-2 mt-2 lg:mt-0">
                                                     <button 
                                                         onClick={() => removeItem(item.id)}
-                                                        className="text-gray-300 hover:text-red-500 transition-colors"
+                                                        className="flex items-center gap-2 text-stone-400 hover:text-red-500 transition-colors text-[10px] font-bold uppercase lg:justify-center"
                                                     >
                                                         <Trash2 size={16} />
+                                                        <span className="lg:hidden">Remove Item</span>
                                                     </button>
                                                 </div>
                                             </div>

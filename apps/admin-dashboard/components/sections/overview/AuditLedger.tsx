@@ -26,10 +26,9 @@ export function AuditLedger({
 }: AuditLedgerProps) {
     return (
         <section 
-            style={{ padding: '50px' }}
-            className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
         >
-            <div className="p-8 border-b border-stone-50 flex justify-between items-center">
+            <div className="p-4 md:p-8 border-b border-stone-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-[#788069] text-white flex items-center justify-center rounded-xl">
                         <Activity size={18} />

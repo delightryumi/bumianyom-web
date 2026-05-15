@@ -238,9 +238,9 @@ export const ForecastSection: React.FC = () => {
                     </h1>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4">
                     {/* View Toggle */}
-                    <div className="flex p-1 bg-stone-100 rounded-xl border border-stone-200/40 shadow-inner">
+                    <div className="flex p-1 bg-stone-100 rounded-xl border border-stone-200/40 shadow-inner overflow-x-auto no-scrollbar">
                         <button
                             onClick={() => setViewMode("daily")}
                             className={`flex items-center justify-center h-10 rounded-lg text-[13px] font-medium transition-all whitespace-nowrap min-w-[140px] ${viewMode === "daily"
@@ -617,16 +617,15 @@ export const ForecastSection: React.FC = () => {
                             </div>
                             <input
                                 type="text"
-                                placeholder="Cari tamu atau booking..."
+                                placeholder="Cari..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 px-4 rounded-lg bg-stone-50 border border-stone-100 focus:bg-white focus:border-stone-300 outline-none text-xs text-stone-600 transition-colors duration-200 w-80 placeholder:text-stone-300"
+                                className="h-9 px-4 rounded-lg bg-stone-50 border border-stone-100 focus:bg-white focus:border-stone-300 outline-none text-xs text-stone-600 transition-colors duration-200 w-full sm:w-80 placeholder:text-stone-300"
                             />
                         </div>
 
                         <div 
-                            style={{ padding: '50px' }}
-                            className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+                            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
                         >
 
                             {/* Table */}
@@ -820,8 +819,7 @@ export const ForecastSection: React.FC = () => {
                         </div>
 
                         <div 
-                            style={{ padding: '50px' }}
-                            className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
+                            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl overflow-hidden"
                         >
                             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {[

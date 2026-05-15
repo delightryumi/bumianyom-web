@@ -201,22 +201,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }, []);
 
     const allNavItems: { id: SectionType; label: string; icon: React.ReactNode }[] = [
-        { id: "overview", label: "Overview", icon: <BarChart2 size={18} /> },
-        { id: "forecast", label: "Forecast", icon: <TrendingUp size={18} /> },
-        { id: "pos", label: "POS Terminal", icon: <ShoppingCart size={18} /> },
-        { id: "invoice", label: "Create Invoice", icon: <FileText size={18} /> },
-        { id: "pnl", label: "PNL Statement", icon: <PieChart size={18} /> },
-        { id: "logo", label: "Logo (Light/Dark)", icon: <FileImage size={18} /> },
-        { id: "hero", label: "Hero Management", icon: <Home size={18} /> },
-        { id: "room-type", label: "Room Categories", icon: <Layout size={18} /> },
-        { id: "about", label: "About Us", icon: <Info size={18} /> },
-        { id: "gallery", label: "Gallery", icon: <Grid size={18} /> },
-        { id: "footer", label: "Footer Info", icon: <Settings size={18} /> },
-        { id: "attractions", label: "Nearby Attractions", icon: <MapPin size={18} /> },
-        { id: "promo", label: "Promo Management", icon: <Gift size={18} /> },
-        { id: "packages", label: "Custom Packages", icon: <Package size={18} /> },
-        { id: "seo", label: "SEO & Metadata", icon: <Search size={18} /> },
-        { id: "users", label: "User Management", icon: <Users size={18} /> },
+        { id: "overview", label: "Overview", icon: <BarChart2 size={18} strokeWidth={2} /> },
+        { id: "forecast", label: "Forecast", icon: <TrendingUp size={18} strokeWidth={2} /> },
+        { id: "pos", label: "POS Terminal", icon: <ShoppingCart size={18} strokeWidth={2} /> },
+        { id: "invoice", label: "Create Invoice", icon: <FileText size={18} strokeWidth={2} /> },
+        { id: "pnl", label: "PNL Statement", icon: <PieChart size={18} strokeWidth={2} /> },
+        { id: "logo", label: "Logo (Light/Dark)", icon: <FileImage size={18} strokeWidth={2} /> },
+        { id: "hero", label: "Hero Management", icon: <Home size={18} strokeWidth={2} /> },
+        { id: "room-type", label: "Room Categories", icon: <Layout size={18} strokeWidth={2} /> },
+        { id: "about", label: "About Us", icon: <Info size={18} strokeWidth={2} /> },
+        { id: "gallery", label: "Gallery", icon: <Grid size={18} strokeWidth={2} /> },
+        { id: "footer", label: "Footer Info", icon: <Settings size={18} strokeWidth={2} /> },
+        { id: "attractions", label: "Nearby Attractions", icon: <MapPin size={18} strokeWidth={2} /> },
+        { id: "promo", label: "Promo Management", icon: <Gift size={18} strokeWidth={2} /> },
+        { id: "packages", label: "Custom Packages", icon: <Package size={18} strokeWidth={2} /> },
+        { id: "seo", label: "SEO & Metadata", icon: <Search size={18} strokeWidth={2} /> },
+        { id: "users", label: "User Management", icon: <Users size={18} strokeWidth={2} /> },
     ];
 
     const navItems = isSuperadmin 

@@ -3,6 +3,7 @@
 import React, { useState, useLayoutEffect, useRef } from "react";
 import { Sidebar } from "./Sidebar";
 import { StatusWidget } from "./StatusWidget";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import { useFooter } from "../sections/footer/useFooter";
@@ -69,7 +70,11 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             )}
             <main className="main-content">
                 <div className="dashboard-top-bar">
-                    <StatusWidget />
+                    <StatusWidget 
+                        onMenuClick={() => setIsCollapsed(false)} 
+                        isCollapsed={isCollapsed}
+                        onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
+                    />
                 </div>
 
                 <div className="main-scroll-container">
@@ -101,6 +106,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     </footer>
                 </div>
             </main>
+
         </div>
     );
 };

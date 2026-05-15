@@ -170,8 +170,7 @@ export const ExpenseSection: React.FC<ExpenseSectionProps> = ({ month, expenses,
                         initial={{ opacity: 0, y: -20, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.98 }}
-                        style={{ padding: '50px' }}
-                        className="bg-white rounded-[24px] border border-stone-100 shadow-2xl flex flex-col gap-14 mb-4 w-full"
+                        className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-2xl flex flex-col gap-10 md:gap-14 mb-4 w-full"
                     >
                         <div className="flex items-center justify-between border-b border-stone-50 pb-10">
                             <span className="text-xs font-medium text-stone-400 uppercase tracking-widest">Bulk Recording • {newRows.length} item(s)</span>
@@ -309,8 +308,7 @@ export const ExpenseSection: React.FC<ExpenseSectionProps> = ({ month, expenses,
 
             {/* Audit Ledger - Explicit 50px Padding */}
             <div 
-                style={{ padding: '50px' }}
-                className="bg-white rounded-[24px] border border-stone-100 shadow-xl overflow-hidden w-full"
+                className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl overflow-hidden w-full"
             >
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[900px]">

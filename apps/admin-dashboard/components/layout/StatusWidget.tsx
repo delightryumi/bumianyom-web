@@ -1,21 +1,52 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Clock, Calendar, Wifi, ArrowLeft, Sparkles, PlusCircle } from "lucide-react";
+import { motion } from "motion/react";
+import { Clock, Calendar, Wifi, ArrowLeft, Sparkles, PlusCircle, Menu, User as UserIcon, Maximize2, Minimize2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 /* ── Brand Colors ── */
 const SAGE = "#788069";
 
-export const StatusWidget = () => {
+interface StatusWidgetProps {
+    onMenuClick?: () => void;
+    isCollapsed?: boolean;
+    onToggleSidebar?: () => void;
+}
+
+export const StatusWidget = ({ onMenuClick, isCollapsed, onToggleSidebar }: StatusWidgetProps) => {
     const pathname = usePathname();
     const router = useRouter();
+    const { user } = useAuth();
     const [time, setTime] = useState(new Date());
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    
+    const userName = user?.displayName || user?.email?.split('@')[0] || "Administrator";
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(timer);
+        
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('fullscreenchange', handleFsChange);
+        };
     }, []);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    };
 
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString("en-US", {
@@ -46,7 +77,7 @@ export const StatusWidget = () => {
         return (
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-6">
-                    <button 
+                    <button
                         onClick={() => router.push("/overview")}
                         className="flex items-center gap-2.5 text-stone-400 hover:text-stone-900 transition-colors group"
                     >
@@ -67,11 +98,11 @@ export const StatusWidget = () => {
 
                 <div className="flex items-center gap-6">
                     <div className="hidden md:flex flex-col items-end border-stone-100 pr-0 mr-0">
-                         <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest mb-1">System Status</span>
-                         <div className="flex items-center gap-2">
-                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                             <span className="text-[10px] font-bold text-stone-800 uppercase tracking-wider">Live Synchronization</span>
-                         </div>
+                        <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest mb-1">System Status</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-stone-800 uppercase tracking-wider">Live Synchronization</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -79,31 +110,71 @@ export const StatusWidget = () => {
     }
 
     return (
-        <div className="status-widget-container">
-            <div className="status-info">
-                <div className="greeting-pill">
-                    <span className="greeting-text">{getGreeting()}</span>
-                </div>
-
-                <div className="date-time-cluster">
-                    <div className="time-display">
-                        <Clock size={14} className="text-sage/60" />
-                        <span>{formatTime(time)}</span>
+        <div className="status-widget-container relative flex items-center justify-between w-full">
+            <div className="flex items-center gap-3 min-w-0">
+                <button 
+                    onClick={onMenuClick}
+                    className="lg:hidden p-2 -ml-2 text-stone-300 hover:text-white transition-colors flex-shrink-0"
+                >
+                    <Menu size={22} />
+                </button>
+                
+                {/* Left Side: Greeting on Top, Time/Date Stacked Below */}
+                <div className="flex flex-col gap-1 min-w-0">
+                    <div className="mb-0.5">
+                        <span className="greeting-text text-[9px] sm:text-[11px] whitespace-nowrap text-white">{getGreeting()}</span>
                     </div>
-                    <div className="divider-dot" />
-                    <div className="date-display">
-                        <Calendar size={14} className="text-sage/60" />
-                        <span>{formatDate(time)}</span>
+
+                    <div className="date-time-stack flex flex-col gap-0.5">
+                        <div className="time-display flex items-center gap-1.5 text-[10px] sm:text-[13px] font-bold text-white leading-none">
+                            <Clock size={12} className="text-peach/60" />
+                            <span className="tabular-nums">{formatTime(time)}</span>
+                        </div>
+                        <div className="date-display flex items-center gap-1.5 text-[8px] sm:text-[11px] font-medium text-white/50 whitespace-nowrap leading-none">
+                            <Calendar size={11} className="text-peach/50" />
+                            <span>{formatDate(time)}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="system-status">
-                <div className="status-indicator">
-                    <div className="pulse-dot" />
-                    <span className="status-text">System Live</span>
+            {/* Center: Nexura Branding Logo */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex items-center gap-2">
+                <img 
+                    src="/channels/nexura-logo.png" 
+                    alt="Nexura Logo" 
+                    className="h-18 w-auto object-contain opacity-100 transition-opacity cursor-default"
+                />
+            </div>
+
+            {/* Right Side: Identity & Status Stack */}
+            <div className="flex items-center gap-6 flex-shrink-0">
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2 px-1 py-1">
+                        <UserIcon size={10} className="text-peach" />
+                        <span className="text-[9px] sm:text-[10px] font-bold text-white whitespace-nowrap">{userName}</span>
+                    </div>
+                    
+                    <div className="system-status flex items-center gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 px-1">
+                            <div className="pulse-dot w-1.5 h-1.5 sm:w-2 sm:h-2" />
+                            <span className="status-text text-[8px] sm:text-[10px] text-white font-bold uppercase tracking-widest">System Live</span>
+                        </div>
+                        <Wifi size={14} className="text-white/20 hidden xs:block" />
+                    </div>
                 </div>
-                <Wifi size={14} className="text-sage/40" />
+
+                {/* Far Right: Full View Toggle (Center Piece) */}
+                <motion.button 
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={toggleFullscreen}
+                    className="hidden lg:flex items-center justify-center w-11 h-11 bg-emerald-400/10 border border-emerald-400/20 rounded-xl text-emerald-400 hover:bg-emerald-400/20 transition-all shadow-md relative overflow-hidden group"
+                    title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                >
+                    <div className="absolute inset-0 bg-emerald-400/20 animate-ping opacity-40 pointer-events-none" />
+                    {isFullscreen ? <Minimize2 size={18} className="relative z-10" /> : <Maximize2 size={18} className="relative z-10" />}
+                </motion.button>
             </div>
         </div>
     );

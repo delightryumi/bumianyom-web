@@ -246,12 +246,20 @@
 }
 
 .dashboard-top-bar {
-    padding: 24px 40px;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(120, 128, 105, 0.1);
+    padding: 12px 40px;
+    background: linear-gradient(180deg, rgba(30, 30, 30, 0.35) 0%, rgba(10, 10, 10, 0.5) 100%);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid rgba(255, 255, 255, 0.03);
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 24px;
+    margin: 12px 24px 0 24px;
     z-index: 30;
     flex-shrink: 0;
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.25),
+        0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .main-scroll-container {
@@ -289,7 +297,7 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--sage);
+    color: white;
 }
 
 .date-time-cluster {
@@ -298,7 +306,7 @@
     gap: 12px;
     font-size: 13px;
     font-weight: 700;
-    color: var(--rich-black);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .time-display,
@@ -361,7 +369,7 @@
     font-size: 10px;
     font-weight: 900;
     text-transform: uppercase;
-    color: var(--sage-dark);
+    color: white;
     letter-spacing: 0.1em;
 }
 
@@ -461,26 +469,40 @@
         left: -400px;
         transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: none;
+        top: 0;
+        left: -100%;
+        height: 100vh;
+        border-radius: 0;
     }
 
     .dashboard-wrapper.mobile-open .sidebar {
-        left: 20px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        left: 0;
+        box-shadow: 20px 0 60px rgba(0, 0, 0, 0.3);
     }
 
     .dashboard-wrapper:not(.collapsed) .main-content,
     .dashboard-wrapper.collapsed .main-content {
         margin-left: 0;
         max-width: 100vw;
+        width: 100%;
+    }
+
+    .dashboard-top-bar {
+        padding: 16px 20px;
+    }
+
+    .main-scroll-container {
         padding: 20px;
+        padding-bottom: 100px;
     }
 
     .sidebar.collapsed {
-        left: -400px;
+        left: -100%;
     }
 
     .dashboard-wrapper.mobile-open .sidebar.collapsed {
-        left: 20px;
+        left: 0;
+        width: 100px;
     }
 }
 

@@ -28,8 +28,8 @@ export function StatCard({ icon, label, count, accent, items = [], onItemClick, 
         <motion.div 
             whileHover={{ y: -8, scale: 1.01 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            style={{ padding: '50px' }}
-            className="bg-white rounded-[24px] border border-stone-100 shadow-xl hover:shadow-2xl hover:shadow-stone-200/50 flex flex-col gap-6 cursor-default transition-all duration-300"
+            style={{ }}
+            className="bg-white p-6 md:p-8 lg:p-12 rounded-[24px] border border-stone-100 shadow-xl hover:shadow-2xl hover:shadow-stone-200/50 flex flex-col gap-6 cursor-default transition-all duration-300"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

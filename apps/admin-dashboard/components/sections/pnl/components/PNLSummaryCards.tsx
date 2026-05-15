@@ -24,7 +24,7 @@ function SummaryCard({
             variants={variants}
             whileHover={{ y: -6, scale: 1.02 }}
             onClick={onClick}
-            className={`group relative flex flex-col gap-8 p-7 rounded-xl bg-white border shadow-xl shadow-stone-200/20 hover:shadow-2xl transition-all duration-500 overflow-hidden ${
+            className={`group relative flex flex-col gap-4 md:gap-8 p-5 md:p-7 rounded-xl bg-white border shadow-xl shadow-stone-200/20 hover:shadow-2xl transition-all duration-500 overflow-hidden ${
                 onClick ? 'cursor-pointer' : 'cursor-default'
             } border-stone-100 hover:border-stone-300`}
         >

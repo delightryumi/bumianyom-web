@@ -147,7 +147,7 @@ export function OverviewSection() {
             </div>
 
             {/* SECTION 1: MOVEMENT GRID */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10">
                 <StatCard 
                     accent={SAGE} icon={<LogIn size={18} />} label="Check In Today" 
                     count={dash || checkInCount} items={todayCheckIns}

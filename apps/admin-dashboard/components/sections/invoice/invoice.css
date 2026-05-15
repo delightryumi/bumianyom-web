@@ -425,6 +425,75 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+/* Responsive Overrides */
+@media (max-width: 1024px) {
+    .invoice-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 2rem;
+    }
+
+    .invoice-form-card {
+        max-height: none;
+        padding: 1.25rem;
+    }
+
+    .invoice-preview-card {
+        overflow-x: auto;
+        padding-bottom: 2rem;
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .invoice-paper {
+        transform: scale(0.45);
+        transform-origin: top left;
+        margin-bottom: -150mm; /* Compensation for scale */
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    header.px-8 {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    header.px-8 div.flex.gap-4 {
+        margin-right: 0 !important;
+        width: 100%;
+    }
+
+    .btn-invoice-action {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .item-row .grid {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .invoice-paper {
+        transform: scale(0.38);
+        margin-bottom: -180mm;
+    }
+
+    .brand-title {
+        font-size: 20pt;
+    }
+
+    .invoice-header {
+        margin-bottom: 15mm;
+    }
+}
+
 /* Print Overrides */
 @media print {
     /* Hide layout elements explicitly */
