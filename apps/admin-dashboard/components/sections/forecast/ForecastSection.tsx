@@ -635,7 +635,7 @@ export const ForecastSection: React.FC = () => {
                                     <thead>
                                         <tr className="border-b border-stone-50 text-[10px] uppercase font-medium text-stone-300 tracking-[0.15em]">
                                             <th className="py-4 px-8 min-w-[200px] text-left">Detail Tamu</th>
-                                            <th className="py-4 px-8 min-w-[160px] text-center">Channel</th>
+                                            <th className="py-4 px-8 min-w-[160px] text-left">Channel</th>
                                             <th className="py-4 px-8 min-w-[180px] text-center">Room & Notes</th>
                                             <th className="py-4 px-8 min-w-[160px] text-center">Tagihan / Info</th>
                                             <th className="py-4 px-8 min-w-[130px] text-center">Status</th>
@@ -678,33 +678,57 @@ export const ForecastSection: React.FC = () => {
                                                 <tr key={i} className="group border-b border-stone-50 last:border-0 hover:bg-stone-50/40 transition-colors duration-150">
                                                     {/* Detail Tamu / Item */}
                                                     <td className="py-6 px-8 text-left">
-                                                        <div className="flex items-center justify-start gap-3">
-                                                            <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-400 font-bold text-xs uppercase border border-stone-200 flex-shrink-0">
-                                                                {(entry.guestName || entry.incomeCategory || "O").charAt(0)}
+                                                        <div className="flex items-center justify-start gap-3.5">
+                                                            <div 
+                                                                className="w-10 h-10 rounded-full overflow-hidden border border-stone-200/60 flex-shrink-0 flex items-center justify-center shadow-inner"
+                                                                style={{ backgroundColor: ['#ffd8a630', '#78806930', '#f3e8ff', '#e0e7ff', '#dcfce7', '#fee2e2', '#fef3c7'][((((entry.guestName || entry.incomeCategory || "O").charCodeAt(0) || 0) + (entry.amount || 0)) % 7)] }}
+                                                            >
+                                                                <img 
+                                                                    src={`/avatar/memo_${((((entry.guestName || entry.incomeCategory || "O").charCodeAt(0) || 0) + (entry.amount || 0)) % 35) + 1}.png`} 
+                                                                    alt={entry.guestName || "Guest"} 
+                                                                    className="w-full h-full object-cover"
+                                                                />
                                                             </div>
                                                             <div className="text-left min-w-0">
                                                                 <div className="text-sm font-bold text-stone-800 truncate">{entry.guestName || entry.incomeCategory}</div>
-                                                                <div className="text-[10px] text-stone-400 font-medium truncate">{entry.bookingId || (entry.type === 'other_income' ? `By: ${entry.staffName}` : "#N/A")}</div>
+                                                                <div className="text-[10px] text-stone-400 font-medium truncate">
+                                                                    {entry.checkInDate ? `${entry.checkInDate} — ${entry.checkOutDate || entry.checkInDate}` : (entry.bookingId || (entry.type === 'other_income' ? `By: ${entry.staffName}` : "—"))}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     {/* Channel */}
-                                                    <td className="py-6 px-8 text-center">
-                                                        <div className="flex items-center justify-center gap-2.5">
+                                                    <td className="py-6 px-8 text-left">
+                                                        <div className="flex items-center justify-start gap-3">
                                                             {entry.type === 'other_income' ? (
-                                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center border border-stone-100 bg-stone-50 text-stone-400">
+                                                                <div className="w-7 h-7 rounded-lg flex items-center justify-center border border-stone-100 bg-stone-50 text-stone-400 flex-shrink-0">
                                                                     <Coffee size={14} />
                                                                 </div>
                                                             ) : (
-                                                                <div className="w-7 h-7 rounded-lg overflow-hidden border border-stone-100 bg-white p-1">
+                                                                <div className="w-7 h-7 rounded-lg overflow-hidden border border-stone-100 bg-white p-1 flex items-center justify-center flex-shrink-0 shadow-sm">
                                                                     <img 
-                                                                        src={`/channels/${entry.channel?.toLowerCase().replace('.com', '_com').replace(' ', '_')}.png`} 
+                                                                        src={
+                                                                            (() => {
+                                                                                const c = entry.channel || "";
+                                                                                const lower = c.toLowerCase();
+                                                                                if (lower.includes("traveloka")) return "/channels/traveloka.png";
+                                                                                if (lower.includes("booking.com")) return "/channels/booking_com.png";
+                                                                                if (lower.includes("tiket")) return "/channels/tiket_com.png";
+                                                                                if (lower.includes("agoda")) return "/channels/agoda.png";
+                                                                                if (lower.includes("airbnb")) return "/channels/airbnb.png";
+                                                                                if (lower.includes("trip")) return "/channels/trip.png";
+                                                                                if (lower.includes("expedia")) return "/channels/expedia.png";
+                                                                                if (lower.includes("mg")) return "/channels/mg.png";
+                                                                                if (lower.includes("walk")) return "/channels/walk_in.png";
+                                                                                return "/channels/nexura.png";
+                                                                            })()
+                                                                        } 
                                                                         className="w-full h-full object-contain"
                                                                         onError={(e) => (e.currentTarget.style.display = 'none')}
                                                                     />
                                                                 </div>
                                                             )}
-                                                            <span className="text-xs font-medium text-stone-600">{entry.channel || "Internal"}</span>
+                                                            <span className="text-xs font-bold text-stone-700">{entry.channel || "Internal"}</span>
                                                         </div>
                                                     </td>
                                                     {/* Room & Notes */}
@@ -937,6 +961,7 @@ export const ForecastSection: React.FC = () => {
             <AnimatePresence>
                 {selectedGuest && (
                     <GuestDetailModal 
+                        key={selectedGuest.timestamp || selectedGuest.bookingId || Math.random()}
                         guest={selectedGuest} 
                         isEditing={isEditing}
                         onClose={() => { setSelectedGuest(null); setIsEditing(false); }} 

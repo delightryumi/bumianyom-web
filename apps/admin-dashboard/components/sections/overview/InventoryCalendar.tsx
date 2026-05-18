@@ -19,12 +19,14 @@ import {
 } from "date-fns";
 
 export function InventoryCalendar({ 
+    targetDate = 'today',
     data, 
     roomTypes = [], 
     totalRooms, 
     onDateSelect,
     onCellClick
 }: { 
+    targetDate?: 'today' | 'tomorrow',
     data: any[], 
     roomTypes?: any[], 
     totalRooms: number, 
@@ -32,6 +34,14 @@ export function InventoryCalendar({
     onCellClick?: (bookings: any[], date: string, typeName: string) => void
 }) {
     const [viewDate, setViewDate] = React.useState(new Date());
+
+    const activeDate = React.useMemo(() => {
+        return targetDate === 'tomorrow' ? addDays(startOfDay(new Date()), 1) : startOfDay(new Date());
+    }, [targetDate]);
+
+    React.useEffect(() => {
+        setViewDate(targetDate === 'tomorrow' ? addDays(startOfDay(new Date()), 1) : startOfDay(new Date()));
+    }, [targetDate]);
 
     const days = React.useMemo(() => {
         return Array.from({ length: 14 }, (_, i) => addDays(startOfDay(viewDate), i));
@@ -87,10 +97,11 @@ export function InventoryCalendar({
                             </th>
                             {days.map((day, idx) => {
                                 const isEnd = isWeekend(day);
+                                const isActive = isSameDay(day, activeDate);
                                 return (
-                                <th key={idx} className={`p-4 border-b border-stone-100 min-w-[100px] text-center ${isSameDay(day, new Date()) ? 'bg-[#788069]/5' : isEnd ? 'bg-red-50/50' : 'bg-white'}`}>
+                                <th key={idx} className={`p-4 border-b border-stone-100 min-w-[100px] text-center ${isActive ? 'bg-[#788069]/10 border-b-2 border-b-[#788069]' : isEnd ? 'bg-red-50/50' : 'bg-white'}`}>
                                     <p className={`text-[8px] font-black uppercase tracking-tighter mb-0.5 ${isEnd ? 'text-red-400' : 'text-stone-300'}`}>{format(day, 'EEE')}</p>
-                                    <p className={`text-[14px] font-bold font-outfit ${isEnd ? 'text-red-600' : 'text-stone-900'}`}>{format(day, 'dd')}</p>
+                                    <p className={`text-[14px] font-bold font-outfit ${isActive ? 'text-[#788069]' : isEnd ? 'text-red-600' : 'text-stone-900'}`}>{format(day, 'dd')}</p>
                                 </th>
                             )})}
                         </tr>
@@ -129,7 +140,7 @@ export function InventoryCalendar({
 
                                     const occupied = bookingsInCell.reduce((acc, curr) => acc + (Number(curr.roomCount) || 1), 0);
                                     const available = Math.max(0, type.allotment - occupied);
-                                    const isToday = isSameDay(day, new Date());
+                                    const isActive = isSameDay(day, activeDate);
                                     const isSoldOut = available === 0;
                                     const isEnd = isWeekend(day);
 
@@ -141,7 +152,7 @@ export function InventoryCalendar({
                                         <td 
                                             key={dIdx} 
                                             onClick={handleCellClick}
-                                            className={`p-4 border-b border-r border-stone-100/50 text-center cursor-pointer transition-all ${isToday ? 'bg-[#788069]/5' : ''} ${isSoldOut ? 'bg-rose-50/40' : (isEnd ? 'bg-red-50/30 hover:bg-red-50/70' : 'hover:bg-stone-100/50')}`}
+                                            className={`p-4 border-b border-r border-stone-100/50 text-center cursor-pointer transition-all ${isActive ? 'bg-[#788069]/10 shadow-inner' : ''} ${isSoldOut ? 'bg-rose-50/40' : (isEnd ? 'bg-red-50/30 hover:bg-red-50/70' : 'hover:bg-stone-100/50')}`}
                                         >
                                             <div className="flex flex-col items-center justify-center gap-1">
                                                 <div className="flex items-center gap-1.5">

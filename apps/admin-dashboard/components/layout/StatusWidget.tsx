@@ -126,9 +126,18 @@ export const StatusWidget = ({ onMenuClick }: StatusWidgetProps) => {
 
             <div className="flex items-center gap-6 flex-shrink-0">
                 <div className="flex flex-col items-end gap-1">
-                    <div className="flex items-center gap-2 px-1 py-1">
-                        <UserIcon size={10} className="text-peach" />
-                        <span className="text-[9px] sm:text-[10px] font-bold text-white whitespace-nowrap">{userName}</span>
+                    <div className="flex items-center gap-3 px-1 py-1">
+                        <div 
+                            className="w-10 h-10 rounded-full overflow-hidden border border-peach/40 shadow-inner flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: ['#ffd8a630', '#78806930', '#f3e8ff', '#e0e7ff', '#dcfce7', '#fee2e2', '#fef3c7'][((userName || "U").charCodeAt(0) || 0) % 7] }}
+                        >
+                            <img 
+                                src={`/avatar/memo_${((((userName || "U").charCodeAt(0) || 0) + 5) % 35) + 1}.png`} 
+                                alt={userName}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        <span className="text-[11px] sm:text-[12px] font-bold text-white whitespace-nowrap">{userName}</span>
                     </div>
 
                     <div className="system-status flex items-center gap-2 sm:gap-4">

@@ -225,8 +225,12 @@ export default function POSLayout({
 
                     {/* Profile Shortcut (Clean, no side lines/borders, Jet Black & Gold theme) */}
                     <button className="flex items-center gap-3 p-1.5 pr-2 bg-transparent border-none shadow-none rounded-[14px] transition-all duration-300 group">
-                        <div className="w-9 h-9 rounded-[10px] bg-[#f6f6f8] border border-[#D4AF37]/40 flex items-center justify-center text-[#0F0F12] font-bold text-xs tracking-wider shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] group-hover:bg-[#0F0F12] group-hover:text-[#D4AF37] transition-colors duration-300">
-                            {user?.email?.slice(0, 2).toUpperCase() || 'NA'}
+                        <div className="w-9 h-9 rounded-[10px] overflow-hidden bg-[#f6f6f8] border border-[#D4AF37]/40 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] transition-transform duration-300 group-hover:scale-105 flex-shrink-0">
+                            <img 
+                                src={`/avatar/memo_${((((user?.email || "NEXURA").charCodeAt(0) || 0) + 12) % 35) + 1}.png`} 
+                                alt="Profile Avatar"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                         <div className="hidden xl:flex flex-col items-start text-left">
                             <span className="text-[13px] font-semibold text-[#121214] tracking-tight leading-none group-hover:text-[#0F0F12] transition-colors">

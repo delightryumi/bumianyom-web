@@ -251,7 +251,7 @@ function AddTransactionContent() {
                                                         <div className="flex justify-between items-center">
                                                             <span className="text-[11px] font-medium text-stone-400 uppercase">{revenueType === 'room' ? "Periode" : "Tanggal"}</span>
                                                             <span className="text-[11px] font-bold text-stone-800 uppercase">
-                                                                {form.checkIn} {revenueType === 'room' && `— ${form.checkOut || '...'}`}
+                                                                {form.checkIn} {revenueType === 'room' && `— ${form.checkOut || '0'}`}
                                                             </span>
                                                         </div>
                                                         <div className="flex justify-between items-center">

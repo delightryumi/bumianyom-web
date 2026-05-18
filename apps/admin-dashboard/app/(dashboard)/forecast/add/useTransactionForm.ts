@@ -101,8 +101,11 @@ export const useTransactionForm = () => {
                 setRoomTypes(types);
 
                 const bSnap = await getDocs(collection(db, "daily_revenue"));
-                const bookings = bSnap.docs.flatMap(d => d.data().entries || []);
-                setOccupancy(bookings);
+                const allBookings = bSnap.docs.flatMap(d => d.data().entries || []);
+                const uniqueBookings = allBookings.filter((e: any, idx: number, self: any[]) => 
+                    self.findIndex(t => t.timestamp === e.timestamp) === idx
+                );
+                setOccupancy(uniqueBookings);
             } catch (err) {
                 console.error("Error fetching inventory data:", err);
             }

@@ -24,8 +24,12 @@ export const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete, vari
 
             <div className="flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-sage/10 bg-sage/5 text-sage shadow-sm transition-all group-hover:rotate-6 duration-500" style={{ color: SAGE }}>
-                        <User size={18} />
+                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-sage/20 bg-stone-100 flex-shrink-0 shadow-sm transition-all group-hover:scale-105 duration-500">
+                        <img 
+                            src={`/avatar/memo_${((((user.name || "U").charCodeAt(0) || 0) + (user.email || "E").charCodeAt(0)) % 35) + 1}.png`} 
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                        />
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-stone-400 leading-tight block">

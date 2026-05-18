@@ -55,7 +55,11 @@ export function GuestListDrawer({ isOpen, onClose, date, roomType, bookings }: G
                                 <div key={idx} className="p-6 rounded-2xl border border-stone-100 bg-white shadow-sm space-y-4">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-xl bg-sage/10 flex items-center justify-center text-sage relative overflow-hidden">
-                                            <User size={20} />
+                                            <img 
+                                                src={`/avatar/memo_${((((booking.guestName || "G").charCodeAt(0) || 0) + (booking.amount || 0)) % 35) + 1}.png`} 
+                                                alt={booking.guestName}
+                                                className="w-full h-full object-cover"
+                                            />
                                             <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg border border-stone-100 p-1 flex items-center justify-center shadow-sm">
                                                 <img src={getChannelLogo(booking.channel)} alt="" className="w-4 h-4 object-contain grayscale opacity-60" onError={(e) => { e.currentTarget.style.display = 'none'; e.stopPropagation(); }} />
                                             </div>

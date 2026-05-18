@@ -36,7 +36,7 @@ function SummaryCard({
                         style={{ backgroundColor: `${accent}0D`, color: accent, borderColor: `${accent}1A` }}>
                         {icon}
                     </div>
-                    <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-stone-400 leading-tight truncate">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400 leading-tight truncate">
                         {label}
                     </span>
                 </div>
@@ -50,7 +50,7 @@ function SummaryCard({
                             {prefix}
                         </span>
                     )}
-                    <p className={`text-base sm:text-lg md:text-xl lg:text-xl xl:text-xl 2xl:text-2xl font-bold tracking-tight transition-all duration-500 truncate max-w-full ${loading ? 'text-stone-200 animate-pulse' : 'text-stone-900'}`} title={loading ? "Calculating..." : (formatter ? formatter(value) : `${prefix} ${value.toLocaleString('id-ID')}`)}>
+                    <p className={`text-sm sm:text-base md:text-base lg:text-base xl:text-lg 2xl:text-xl font-bold tracking-tight transition-all duration-500 whitespace-nowrap ${loading ? 'text-stone-200 animate-pulse' : 'text-stone-900'}`} title={loading ? "Calculating..." : (formatter ? formatter(value) : `${prefix} ${value.toLocaleString('id-ID')}`)}>
                         {loading ? "—" : (formatter ? formatter(value) : value.toLocaleString('id-ID'))}
                     </p>
                     {suffix && (

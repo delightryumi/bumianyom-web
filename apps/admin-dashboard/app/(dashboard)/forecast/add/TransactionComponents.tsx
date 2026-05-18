@@ -190,7 +190,7 @@ export function RoomTypeSelect({ value, options, onChange }: { value: string, op
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute top-full mt-2 left-0 right-0 bg-white border border-stone-100 shadow-2xl rounded-none p-0 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto custom-scrollbar"
+                            className="absolute top-full mt-2 left-0 right-0 bg-white border border-stone-100 shadow-2xl rounded-none p-0 z-50 flex flex-col gap-0 max-h-96 overflow-y-auto custom-scrollbar"
                         >
                             {options.map((option) => (
                                 <button

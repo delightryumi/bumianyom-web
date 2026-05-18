@@ -208,6 +208,7 @@ export function OverviewSection() {
             {isCalendarOpen && (
                 <section className="animate-in fade-in slide-in-from-top-4 duration-500">
                     <InventoryCalendar 
+                        targetDate={targetDate}
                         data={dailyData} 
                         roomTypes={roomTypesData}
                         totalRooms={roomStatus.total} 
@@ -229,6 +230,7 @@ export function OverviewSection() {
             {/* Modals */}
             {selectedGuest && (
                 <GuestDetailModal 
+                    key={selectedGuest.timestamp || selectedGuest.bookingId || Math.random()}
                     guest={selectedGuest} 
                     isEditing={isEditing} 
                     onClose={() => setSelectedGuest(null)} 
