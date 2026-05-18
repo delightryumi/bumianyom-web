@@ -89,6 +89,8 @@ export const useOverview = () => {
                     let todayTransactions: any[] = [];
                     let allDays: any[] = [];
                     
+                    const seenReservations = new Set<string>();
+                    
                     querySnapshot.forEach((docSnap) => {
                         const data = docSnap.data();
                         const docDate = data.date || docSnap.id;
@@ -100,28 +102,36 @@ export const useOverview = () => {
                             const isCancelled = e.status === "CANCELLED";
                             const isAccommodation = e.type === "accommodation" || (!e.type && e.guestName);
                             
-                            // 1. Logic for Check-In Today (Arrivals + Extensions)
-                            if (isAccommodation && !isCancelled) {
-                                if (e.checkInDate === dateStr) {
-                                    checkIn.push({ ...e, isExtend: false });
-                                    todayTransactions.push({ ...e, isExtend: false });
-                                } else if (e.checkInDate < dateStr && e.checkOutDate > dateStr) {
-                                    checkIn.push({ ...e, isExtend: true });
-                                    todayTransactions.push({ ...e, isExtend: true });
-                                }
+                            if (isAccommodation) {
+                                const reservationId = `${e.guestName}_${e.checkInDate}_${e.checkOutDate}_${e.roomNumber}`;
                                 
-                                if (e.checkOutDate === dateStr) checkOut.push(e);
-                                allAccommodation.push(e);
-                            }
+                                if (!seenReservations.has(reservationId)) {
+                                    seenReservations.add(reservationId);
+                                    
+                                    // 1. Logic for Check-In Today (Arrivals + Extensions)
+                                    if (!isCancelled) {
+                                        if (e.checkInDate === dateStr) {
+                                            checkIn.push({ ...e, isExtend: false });
+                                            todayTransactions.push({ ...e, isExtend: false });
+                                        } else if (e.checkInDate < dateStr && e.checkOutDate > dateStr) {
+                                            checkIn.push({ ...e, isExtend: true });
+                                            todayTransactions.push({ ...e, isExtend: true });
+                                        }
+                                        
+                                        if (e.checkOutDate === dateStr) checkOut.push(e);
+                                        allAccommodation.push(e);
+                                    }
 
-                            // 2. Logic for Cancellations
-                            if (isCancelled && e.checkInDate === dateStr) {
-                                cancels.push(e);
-                            }
-
-                            // 3. Logic for "Other Income" created today
-                            if (!isAccommodation && docDate === dateStr) {
-                                todayTransactions.push(e);
+                                    // 2. Logic for Cancellations
+                                    if (isCancelled && e.checkInDate === dateStr) {
+                                        cancels.push(e);
+                                    }
+                                }
+                            } else {
+                                // 3. Logic for "Other Income" created today
+                                if (docDate === dateStr) {
+                                    todayTransactions.push(e);
+                                }
                             }
                         });
                     });

@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { TrendingUp, Store, Sparkles, MoreHorizontal, Receipt, Percent, Activity, Wallet, ArrowUpRight } from "lucide-react";
 import { GlobalPnLResult } from "@/lib/pnl-utils";
 

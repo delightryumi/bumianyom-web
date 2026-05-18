@@ -14,7 +14,8 @@ import {
     subMonths, 
     addMonths, 
     isSameDay,
-    startOfDay 
+    startOfDay,
+    isWeekend
 } from "date-fns";
 
 export function InventoryCalendar({ 
@@ -84,12 +85,14 @@ export function InventoryCalendar({
                             <th className="sticky left-0 z-20 bg-stone-50 p-6 border-b border-r border-stone-100 min-w-[200px] text-left">
                                 <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Room Type</p>
                             </th>
-                            {days.map((day, idx) => (
-                                <th key={idx} className={`p-4 border-b border-stone-100 min-w-[100px] text-center ${isSameDay(day, new Date()) ? 'bg-[#788069]/5' : 'bg-white'}`}>
-                                    <p className="text-[8px] font-black text-stone-300 uppercase tracking-tighter mb-0.5">{format(day, 'EEE')}</p>
-                                    <p className="text-[14px] font-bold text-stone-900 font-outfit">{format(day, 'dd')}</p>
+                            {days.map((day, idx) => {
+                                const isEnd = isWeekend(day);
+                                return (
+                                <th key={idx} className={`p-4 border-b border-stone-100 min-w-[100px] text-center ${isSameDay(day, new Date()) ? 'bg-[#788069]/5' : isEnd ? 'bg-red-50/50' : 'bg-white'}`}>
+                                    <p className={`text-[8px] font-black uppercase tracking-tighter mb-0.5 ${isEnd ? 'text-red-400' : 'text-stone-300'}`}>{format(day, 'EEE')}</p>
+                                    <p className={`text-[14px] font-bold font-outfit ${isEnd ? 'text-red-600' : 'text-stone-900'}`}>{format(day, 'dd')}</p>
                                 </th>
-                            ))}
+                            )})}
                         </tr>
                     </thead>
                     <tbody>
@@ -128,6 +131,7 @@ export function InventoryCalendar({
                                     const available = Math.max(0, type.allotment - occupied);
                                     const isToday = isSameDay(day, new Date());
                                     const isSoldOut = available === 0;
+                                    const isEnd = isWeekend(day);
 
                                     const handleCellClick = () => {
                                         onCellClick?.(bookingsInCell, dateStr, type.name);
@@ -137,7 +141,7 @@ export function InventoryCalendar({
                                         <td 
                                             key={dIdx} 
                                             onClick={handleCellClick}
-                                            className={`p-4 border-b border-stone-100 text-center cursor-pointer transition-all ${isToday ? 'bg-[#788069]/5' : ''} ${isSoldOut ? 'bg-rose-50/20' : 'hover:bg-stone-100/50'}`}
+                                            className={`p-4 border-b border-r border-stone-100/50 text-center cursor-pointer transition-all ${isToday ? 'bg-[#788069]/5' : ''} ${isSoldOut ? 'bg-rose-50/40' : (isEnd ? 'bg-red-50/30 hover:bg-red-50/70' : 'hover:bg-stone-100/50')}`}
                                         >
                                             <div className="flex flex-col items-center justify-center gap-1">
                                                 <div className="flex items-center gap-1.5">

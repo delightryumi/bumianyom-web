@@ -77,13 +77,13 @@ export function processPnLData(
   
   // Calculate Revenue Hotel Collect (Pay at Hotel)
   const revenueHotelCollect = transactions
-    .filter(t => t.paymentStatus === "Pay at Hotel" && t.type !== "other_income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type !== "other_income")
+    .reduce((sum, t) => sum + (Number(t.paidCash) || 0), 0);
 
   // Calculate Revenue Nexura Collect (Pay at Nexura)
   const revenueNexuraCollect = transactions
-    .filter(t => t.paymentStatus === "Pay at Nexura" && t.type !== "other_income")
-    .reduce((sum, t) => sum + t.amount, 0);
+    .filter(t => t.type !== "other_income")
+    .reduce((sum, t) => sum + (Number(t.paidTransfer) || 0), 0);
 
   // Other Income from daily_revenue (Ledger)
   const ledgerOtherIncome = transactions

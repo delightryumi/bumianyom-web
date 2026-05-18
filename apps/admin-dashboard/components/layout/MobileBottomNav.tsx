@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const SAGE = "#788069";
 const PEACH = "#ffd8a6";

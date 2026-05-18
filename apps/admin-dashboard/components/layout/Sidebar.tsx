@@ -8,7 +8,7 @@ import {
     AnimatePresence,
     type MotionValue,
     type SpringOptions,
-} from "motion/react";
+} from "framer-motion";
 import {
     BarChart2, FileImage, Home, Layout, Coffee,
     Info, Grid, Settings, LogOut, FileText,

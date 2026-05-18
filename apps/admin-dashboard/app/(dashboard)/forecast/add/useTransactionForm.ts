@@ -207,33 +207,58 @@ export const useTransactionForm = () => {
         let transactionEntries: any[] = [];
 
         if (revenueType === "room") {
-            const entryAmount = totalGross;
+            const startD = new Date(form.checkIn);
+            let remainingPayHotel = Number(form.payHotel) || 0;
+            let remainingPayNexura = Number(form.payNexura) || 0;
 
-            transactionEntries = [{
-                type: "accommodation",
-                guestName: form.guestName,
-                checkInDate: form.checkIn,
-                checkOutDate: form.checkOut,
-                roomType: roomTypes.find(rt => rt.id === form.rooms[0].roomTypeId)?.name || "",
-                roomNumber: form.rooms[0].roomNumber,
-                roomCount: 1,
-                nights: nights,
-                channel: form.channel,
-                voucherCode: form.voucherCode,
-                amount: totalGross,
-                payHotel: Number(form.payHotel) || 0,
-                payNexura: Number(form.payNexura) || 0,
-                paidCash: Number(form.payHotel) || 0,
-                paidAmount1: Number(form.payHotel) || 0,
-                paidTransfer: Number(form.payNexura) || 0,
-                paidAmount2: Number(form.payNexura) || 0,
-                paymentStatus: balance === 0 ? "PAID" : "UNPAID",
-                source: (form.channel === "Walk-in" || form.channel === "Nexura Sales" || form.channel === "Booking Engine") ? "Walk-in" : "OTA",
-                status: "CONFIRMED",
-                staffName: form.staffName,
-                note: form.note,
-                timestamp: new Date().toISOString()
-            }];
+            for (let i = 0; i < nights; i++) {
+                const currentDate = new Date(startD);
+                currentDate.setDate(currentDate.getDate() + i);
+                const dateStr = currentDate.toISOString().split('T')[0];
+                
+                const nightlyRate = Number(form.nightRates[i]) || 0;
+                const ratio = totalGross > 0 ? nightlyRate / totalGross : 0;
+                
+                let dailyPayHotel = 0;
+                let dailyPayNexura = 0;
+                
+                if (i === nights - 1) {
+                    dailyPayHotel = remainingPayHotel;
+                    dailyPayNexura = remainingPayNexura;
+                } else {
+                    dailyPayHotel = Math.round((Number(form.payHotel) || 0) * ratio);
+                    dailyPayNexura = Math.round((Number(form.payNexura) || 0) * ratio);
+                    remainingPayHotel -= dailyPayHotel;
+                    remainingPayNexura -= dailyPayNexura;
+                }
+
+                transactionEntries.push({
+                    type: "accommodation",
+                    guestName: form.guestName,
+                    checkInDate: form.checkIn,
+                    checkOutDate: form.checkOut,
+                    effectiveDate: dateStr,
+                    roomType: roomTypes.find(rt => rt.id === form.rooms[0].roomTypeId)?.name || "",
+                    roomNumber: form.rooms[0].roomNumber,
+                    roomCount: 1,
+                    nights: 1,
+                    channel: form.channel,
+                    voucherCode: form.voucherCode,
+                    amount: nightlyRate,
+                    payHotel: dailyPayHotel,
+                    payNexura: dailyPayNexura,
+                    paidCash: dailyPayHotel,
+                    paidAmount1: dailyPayHotel,
+                    paidTransfer: dailyPayNexura,
+                    paidAmount2: dailyPayNexura,
+                    paymentStatus: balance === 0 ? "PAID" : "UNPAID",
+                    source: (form.channel === "Walk-in" || form.channel === "Nexura Sales" || form.channel === "Booking Engine") ? "Walk-in" : "OTA",
+                    status: "CONFIRMED",
+                    staffName: form.staffName,
+                    note: form.note,
+                    timestamp: new Date().toISOString()
+                });
+            }
         } else {
             transactionEntries = [{
                 type: "other_income",
@@ -304,7 +329,7 @@ export const useTransactionForm = () => {
             // Group entries by date to save to correct documents
             const entriesByDate: Record<string, any[]> = {};
             finalEntries.forEach(entry => {
-                const date = entry.checkInDate;
+                const date = entry.effectiveDate || entry.checkInDate;
                 if (!entriesByDate[date]) entriesByDate[date] = [];
                 entriesByDate[date].push(entry);
             });

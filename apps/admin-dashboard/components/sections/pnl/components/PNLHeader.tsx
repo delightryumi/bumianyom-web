@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
     PieChart, LayoutDashboard, TrendingUp, Download, FileText, Calendar, ChevronDown 
 } from "lucide-react";

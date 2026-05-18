@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { 
     ResponsiveContainer, PieChart as RePie, Pie, Cell, 
     BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
@@ -88,8 +88,14 @@ export const PNLCharts: React.FC<PNLChartsProps> = ({
                                 formatter={(value: number) => formatIDR(value)}
                             />
                             <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={2000}>
-                                { [0,1,2,3,4].map((entry, index) => (
-                                    <Cell key={`cell-${index}`} />
+                                {[
+                                    { fill: '#788069' },
+                                    { fill: '#ef4444' },
+                                    { fill: '#f59e0b' },
+                                    { fill: '#6366f1' },
+                                    { fill: '#10b981' }
+                                ].map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
                                 ))}
                             </Bar>
                         </BarChart>

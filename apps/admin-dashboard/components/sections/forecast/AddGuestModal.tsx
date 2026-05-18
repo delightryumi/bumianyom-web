@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, User, CreditCard, Home, MessageSquare, Globe, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, arrayUnion, collection, getDocs } from "firebase/firestore";

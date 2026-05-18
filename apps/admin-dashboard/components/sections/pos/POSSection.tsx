@@ -22,7 +22,7 @@ export const POSSection: React.FC = () => {
     const [customerName, setCustomerName] = useState("");
 
     return (
-        <div className="flex flex-col lg:flex-row h-full w-full bg-white">
+        <div className="flex flex-col lg:flex-row h-full w-full max-w-[1440px] mx-auto pos-canvas">
             {/* ── LEFT: Product Navigation & Grid ── */}
             <ProductGrid 
                 products={products}

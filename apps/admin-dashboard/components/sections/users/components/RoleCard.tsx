@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { Lock, Check, X } from "lucide-react";
 import { RolePermission, MenuItem } from "../types";
 

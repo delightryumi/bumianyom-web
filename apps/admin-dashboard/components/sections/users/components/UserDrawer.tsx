@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { X, Plus, User, Mail, RefreshCw, Check, Lock, Key } from "lucide-react";
 import { UserProfile } from "../types";
 
