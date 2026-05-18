@@ -450,9 +450,9 @@ export const AddTransactionModal = ({
 
                                             <div className="px-10 py-10 space-y-8">
                                                 <div className="grid grid-cols-2 gap-10">
-                                                    <InvoiceItem label="Guest" value={form.guestName || "Pending..."} />
-                                                    <InvoiceItem label="Allocation" value={roomTypes.find(r=>r.id===form.roomTypeId)?.name || "Pending..."} />
-                                                    <InvoiceItem label="Entry Date" value={form.checkIn || "Pending..."} />
+                                                    <InvoiceItem label="Guest" value={form.guestName || "0"} />
+                                                    <InvoiceItem label="Allocation" value={roomTypes.find(r=>r.id===form.roomTypeId)?.name || "0"} />
+                                                    <InvoiceItem label="Entry Date" value={form.checkIn || "0"} />
                                                     <InvoiceItem label="Settlement" value={form.paymentMethod} />
                                                 </div>
 

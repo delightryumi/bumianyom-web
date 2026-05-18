@@ -190,7 +190,7 @@ export function RoomTypeSelect({ value, options, onChange }: { value: string, op
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute top-full mt-2 left-0 right-0 bg-white border border-stone-100 shadow-2xl rounded-xl p-2 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto custom-scrollbar"
+                            className="absolute top-full mt-2 left-0 right-0 bg-white border border-stone-100 shadow-2xl rounded-none p-0 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto custom-scrollbar"
                         >
                             {options.map((option) => (
                                 <button
@@ -200,7 +200,7 @@ export function RoomTypeSelect({ value, options, onChange }: { value: string, op
                                         onChange(option.id);
                                         setIsOpen(false);
                                     }}
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-lg transition-all text-left group ${value === option.id ? 'bg-sage text-white' : 'hover:bg-sage hover:text-white text-stone-600'}`}
+                                    className={`flex items-center gap-4 px-6 py-4 rounded-none transition-all text-left group ${value === option.id ? 'bg-sage text-white' : 'hover:bg-sage hover:text-white text-stone-600'}`}
                                 >
                                     <BedDouble size={16} className={value === option.id ? 'text-white' : 'text-stone-300 group-hover:text-white'} />
                                     <span className="text-[12px] font-medium uppercase tracking-widest">{option.name}</span>

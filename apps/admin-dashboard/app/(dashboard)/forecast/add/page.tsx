@@ -244,7 +244,7 @@ function AddTransactionContent() {
                                                 <div className="p-6 bg-amber-50/30 rounded-xl border border-amber-100/50 space-y-4">
                                                     <div className="flex justify-between items-center border-b border-amber-100/30 pb-3">
                                                         <span className="text-[12px] font-bold uppercase text-amber-400/60 tracking-widest">Guest Name</span>
-                                                        <span className="text-[12px] font-bold text-stone-800 uppercase truncate max-w-[140px]">{form.guestName || 'Pending...'}</span>
+                                                        <span className="text-[12px] font-bold text-stone-800 uppercase truncate max-w-[140px]">{form.guestName || '0'}</span>
                                                     </div>
                                                     
                                                     <div className="space-y-3">

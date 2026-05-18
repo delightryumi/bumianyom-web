@@ -150,13 +150,16 @@ export const useTransactionForm = () => {
                 if (!type) continue;
 
                 // Count existing bookings for this room type on this date
-                const occupied = occupancy.filter(e => 
-                    e.type === 'accommodation' && 
-                    e.status?.toUpperCase() !== 'CANCELLED' && 
-                    e.status?.toUpperCase() !== 'CANCEL' &&
-                    e.roomType?.toLowerCase() === type.name?.toLowerCase() &&
-                    dateStr >= e.checkInDate && dateStr < e.checkOutDate
-                ).reduce((acc, curr) => acc + (Number(curr.roomCount) || 1), 0);
+                const occupied = occupancy.filter(e => {
+                    if (e.type !== 'accommodation' || e.status?.toUpperCase() === 'CANCELLED' || e.status?.toUpperCase() === 'CANCEL') return false;
+                    if (e.roomType?.toLowerCase() !== type.name?.toLowerCase()) return false;
+                    
+                    if (e.effectiveDate) {
+                        return e.effectiveDate === dateStr;
+                    } else {
+                        return dateStr >= e.checkInDate && dateStr < e.checkOutDate;
+                    }
+                }).reduce((acc, curr) => acc + (Number(curr.roomCount) || 1), 0);
 
                 const totalAllotment = parseInt(type.roomCount) || parseInt(type.totalRooms) || 0;
                 if (occupied + count > totalAllotment) return false;

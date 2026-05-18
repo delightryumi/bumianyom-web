@@ -54,10 +54,18 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose, on
     React.useEffect(() => {
         const fetchRoomTypes = async () => {
             const querySnapshot = await getDocs(collection(db, "roomTypes"));
-            setRoomTypes(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            const fetchedTypes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setRoomTypes(fetchedTypes);
+            
+            if (!formData.roomTypeId && guest.roomType) {
+                const matched = fetchedTypes.find((r: any) => r.name?.toLowerCase() === guest.roomType.toLowerCase());
+                if (matched) {
+                    setFormData(prev => ({ ...prev, roomTypeId: matched.id }));
+                }
+            }
         };
         fetchRoomTypes();
-    }, []);
+    }, [guest.roomType]);
 
     const handleSave = async () => {
         try {
@@ -196,7 +204,15 @@ export function GuestDetailModal({ guest, isEditing: initialEditing, onClose, on
                                         <div className="relative group luxury-input bg-white transition-all rounded-lg shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-stone-100/50 focus-within:border-[#788069] focus-within:shadow-md">
                                             <select
                                                 value={formData.roomTypeId}
-                                                onChange={e => setFormData({...formData, roomTypeId: e.target.value})}
+                                                onChange={e => {
+                                                    const selectedId = e.target.value;
+                                                    const selectedRoom = roomTypes.find(r => r.id === selectedId);
+                                                    setFormData({
+                                                        ...formData, 
+                                                        roomTypeId: selectedId,
+                                                        roomType: selectedRoom ? selectedRoom.name : formData.roomType
+                                                    });
+                                                }}
                                                 className="w-full h-11 px-4 bg-transparent outline-none text-[11px] font-bold uppercase tracking-widest custom-select cursor-pointer text-stone-800"
                                             >
                                                 <option value=""></option>
